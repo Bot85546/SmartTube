@@ -5,8 +5,11 @@ This is a separate **tablet testing build** of the same PiTube Cinema UI.
 ## Why a separate APK?
 
 - App label: **PiTube Preview**.
-- Package name: `dev.pradi.pitube.preview`.
-- TV version: `dev.pradi.pitube` — untouched, and can still be built at any time.
+- Local package name: `dev.pradi.pitube.preview`.
+- GitHub test APK package: `dev.pradi.pitube.preview.testN`, with the build's
+  run number in place of `N`. Every new test can install without removing the
+  previous one, though it does not update an existing installation.
+- Local TV version: `dev.pradi.pitube`; GitHub test APK: `dev.pradi.pitube.testN`.
 - Both builds use the same card layouts, home spotlight row, fonts, colors,
   playback features, and focus animation code.
 - The tablet build appears in the regular app drawer instead of requiring an
@@ -28,7 +31,7 @@ to the TV's 1920 x 1080 logical proportions. Nothing is stretched.
 
 ## How to test
 
-1. Install `PiTube-Tab-S11-Ultra-Preview.apk` on the tablet and open it from the
+1. Install the tablet APK from the latest PiTube GitHub test release and open it from the
    app drawer. Allow APK installation only for the file-manager or browser you
    trust; keep Play Protect enabled.
 2. Hold the tablet landscape. The Cinema interface should be centered inside

@@ -16,6 +16,10 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # A distinct install identity for every test build avoids Android's
+      # signature-mismatch error without deleting the previously installed app.
+      PITUBE_TEST_BUILD_SUFFIX: ${{ github.run_number }}
     steps:
       - name: Checkout PiTube and submodules
         uses: actions/checkout@v4
@@ -36,31 +40,10 @@ jobs:
           # Use the action's downloaded Gradle distribution, never those jars.
           validate-wrappers: false
 
-      - name: Require permanent PiTube signing key
-        env:
-          SIGNING_BUNDLE: ${{ secrets.PITUBE_SIGNING_BUNDLE_B64 }}
-        shell: bash
+      - name: Confirm isolated test app identity
         run: |
-          set -euo pipefail
-          if [[ -z "$SIGNING_BUNDLE" ]]; then
-            echo '::error::Permanent signing is not configured. Add the PITUBE_SIGNING_BUNDLE_B64 repository secret before building; disposable debug keys cannot update installed apps.'
-            exit 1
-          fi
-          signing_dir="$RUNNER_TEMP/pitube-signing"
-          mkdir -p "$signing_dir"
-          printf '%s' "$SIGNING_BUNDLE" | base64 --decode | tar -xz -C "$signing_dir"
-          test -s "$signing_dir/pitube.jks"
-          test -s "$signing_dir/keystore.properties"
-          cp "$signing_dir/keystore.properties" keystore.properties
-          printf '\nstoreFile=%s/pitube.jks\n' "$signing_dir" >> keystore.properties
-          chmod 600 keystore.properties "$signing_dir/pitube.jks"
-
-      - name: Confirm signing identity
-        shell: bash
-        run: |
-          set -euo pipefail
-          # The APK certificate must match the previous installed build for updates.
-          echo 'Permanent signing material loaded for both PiTube variants.'
+          echo "New PiTube TV ID: dev.pradi.pitube.test${PITUBE_TEST_BUILD_SUFFIX}"
+          echo "New PiTube tablet ID: dev.pradi.pitube.preview.test${PITUBE_TEST_BUILD_SUFFIX}"
 
       - name: Build PiTube TV and tablet preview
         run: |
@@ -83,7 +66,7 @@ jobs:
             echo '::error::TV and tablet APKs have different signing certificates.'
             exit 1
           fi
-          echo "Both APKs use signing certificate SHA-256: $tv_cert"
+          echo "Both isolated test APKs use signing certificate SHA-256: $tv_cert"
           sha256sum "${tv[0]}" "${tablet[0]}" > PiTube-SHA256SUMS.txt
           cat PiTube-SHA256SUMS.txt
 
@@ -110,6 +93,6 @@ jobs:
             "${tv[0]}" "${tablet[0]}" PiTube-SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title "PiTube v13 test build ${GITHUB_RUN_NUMBER}" \
-            --notes 'Permanently signed PiTube TV and Galaxy Tab S11 Ultra test APKs. Once an installation uses this signing certificate, all subsequent PiTube builds can update it in place. Older preview APKs may use incompatible disposable debug certificates and require a one-time migration. Keep a private backup of the signing bundle.' \
+            --title "PiTube v14 isolated test build ${GITHUB_RUN_NUMBER}" \
+            --notes "TV package: dev.pradi.pitube.test${GITHUB_RUN_NUMBER}; tablet package: dev.pradi.pitube.preview.test${GITHUB_RUN_NUMBER}. Both install separately from all earlier PiTube builds, so you do not need to uninstall or clear the existing app. Each future test release uses another unique ID and is installed side-by-side, rather than updating previous test builds. Delete old versions only when you no longer need them." \
             --prerelease

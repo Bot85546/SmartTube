@@ -29,6 +29,9 @@ def keystoreProperties = new Properties()
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
+// GitHub's numbered test builds are separate apps, so a changed CI signing key
+// cannot prevent installation alongside the user's previous PiTube build.
+def pitubePreviewSuffix = System.getenv('PITUBE_TEST_BUILD_SUFFIX')
 
 // The first letter of the flavor name must be in uppercase
 if (new File("${projectDir}/google-services.json").exists() && (getGradle().getStartParameter().getTaskRequests().toString().contains("Stbeta") ||
@@ -60,7 +63,7 @@ android {
         // A unique increasing versionCode is required for seamless Android updates.
         // CI run numbers persist between builds on this repository.
         versionCode 2470 + (System.getenv('GITHUB_RUN_NUMBER') ?: '0').toInteger()
-        versionName "32.68-pitube.13"
+        versionName "32.68-pitube.14"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField "long", "TIMESTAMP", System.currentTimeMillis() + "L"
 
@@ -163,7 +166,7 @@ android {
     productFlavors {
         stpitube {
             // Independent identity: does not replace the official SmartTube app.
-            applicationId "dev.pradi.pitube"
+            applicationId "dev.pradi.pitube${pitubePreviewSuffix ? '.test' + pitubePreviewSuffix : ''}"
             minSdkVersion 21
             targetSdkVersion project.properties.compileSdkVersion
             // Shared modules expose upstream flavors, not the custom app name.
@@ -172,7 +175,7 @@ android {
         stpitubetablet {
             // Preview of the same PiTube TV UI on a landscape Android tablet.
             // A separate app ID means the real TV variant stays untouched.
-            applicationId "dev.pradi.pitube.preview"
+            applicationId "dev.pradi.pitube.preview${pitubePreviewSuffix ? '.test' + pitubePreviewSuffix : ''}"
             minSdkVersion 21
             targetSdkVersion project.properties.compileSdkVersion
             matchingFallbacks = ['stfdroid']
