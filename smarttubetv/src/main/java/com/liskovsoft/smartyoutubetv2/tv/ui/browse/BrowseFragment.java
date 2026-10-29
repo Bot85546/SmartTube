@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.LayoutInflater;
+import android.view.Gravity;
+import android.widget.FrameLayout;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -163,10 +165,28 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
                     grid.getPaddingRight(), grid.getPaddingBottom());
             grid.setClipToPadding(false);
         }
+        // Leanback's title area is only about 50dp high. Painting a
+        // gradient on it makes the fade end too early and leaves the clock
+        // superimposed on video text. Put a taller veil between the video
+        // rows and the title/sidebar instead: it covers content behind
+        // search, profile and time, but never darkens those controls.
+        FrameLayout browseFrame = root != null
+                ? root.findViewById(R.id.browse_frame) : null;
+        if (browseFrame != null && getContext() != null) {
+            View headerVeil = new View(getContext());
+            headerVeil.setBackgroundResource(R.drawable.pitube_top_bar);
+            headerVeil.setFocusable(false);
+            headerVeil.setClickable(false);
+            headerVeil.setImportantForAccessibility(
+                    View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+            FrameLayout.LayoutParams veilLayout = new FrameLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    Math.round(205f * getResources().getDisplayMetrics().density),
+                    Gravity.TOP);
+            browseFrame.addView(headerVeil, 1, veilLayout);
+        }
         if (getTitleView() != null) {
-            // Return the frosted header veil from v18. This protects the
-            // clock/date from thumbnails behind it without a hard bottom bar.
-            getTitleView().setBackgroundResource(R.drawable.pitube_top_bar);
+            getTitleView().setBackgroundColor(Color.TRANSPARENT);
         }
 
         setupEventListeners();

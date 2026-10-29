@@ -42,6 +42,28 @@ public class ComplexImageCardView extends ImageCardView {
     private ValueAnimator mGlowAnimator;
     private int mGlowAlpha;
     private RecyclerView mGlowOverlayHost;
+    private boolean mGlowDecorationAttached;
+    private ViewTreeObserver mGlowObserver;
+    // Android refuses to change item decorations during a layout pass, which
+    // Leanback can trigger while moving focus to the first video.
+    private final Runnable mInstallGlowDecoration = new Runnable() {
+        @Override public void run() {
+            RecyclerView host = mGlowOverlayHost;
+            if (host == null || mGlowDecorationAttached || !isAttachedToWindow()) return;
+            if (host.isComputingLayout()) {
+                host.post(this);
+                return;
+            }
+            try {
+                host.addItemDecoration(mGlowDecoration, 0);
+                mGlowDecorationAttached = true;
+                host.invalidate();
+            } catch (IllegalStateException duringLayout) {
+                // Focus events can race layout on older Android TV firmware.
+                host.post(this);
+            }
+        }
+    };
     // Draw before children: the focused card covers the inner aura itself.
     private final RecyclerView.ItemDecoration mGlowDecoration =
             new RecyclerView.ItemDecoration() {
@@ -141,8 +163,11 @@ public class ComplexImageCardView extends ImageCardView {
         removeGlowOverlay();
         mGlowOverlayHost = host;
         mAuroraGlow.setCallback(mGlowCallback);
-        host.addItemDecoration(mGlowDecoration, 0);
-        getViewTreeObserver().addOnPreDrawListener(mGlowPositionListener);
+        // Queue the layout-mutating registration for the next UI turn.
+        // Focus changes inside RecyclerView layout must never mutate it.
+        host.post(mInstallGlowDecoration);
+        mGlowObserver = getViewTreeObserver();
+        mGlowObserver.addOnPreDrawListener(mGlowPositionListener);
         syncGlowPosition();
         host.invalidate();
     }
@@ -172,12 +197,33 @@ public class ComplexImageCardView extends ImageCardView {
 
     private void removeGlowOverlay() {
         if (mGlowOverlayHost == null) return;
-        ViewTreeObserver observer = getViewTreeObserver();
-        if (observer.isAlive()) {
+        ViewTreeObserver observer = mGlowObserver;
+        mGlowObserver = null;
+        if (observer != null && observer.isAlive()) {
             observer.removeOnPreDrawListener(mGlowPositionListener);
         }
+
+        final RecyclerView host = mGlowOverlayHost;
+        host.removeCallbacks(mInstallGlowDecoration);
         mAuroraGlow.setActive(false);
-        mGlowOverlayHost.removeItemDecoration(mGlowDecoration);
+        if (mGlowDecorationAttached) {
+            mGlowDecorationAttached = false;
+            // Removal is likewise deferred: RecyclerView recycles/detaches
+            // cards while it is computing its layout.
+            host.post(new Runnable() {
+                @Override public void run() {
+                    if (host.isComputingLayout()) {
+                        host.post(this);
+                        return;
+                    }
+                    try {
+                        host.removeItemDecoration(mGlowDecoration);
+                    } catch (IllegalStateException duringLayout) {
+                        host.post(this);
+                    }
+                }
+            });
+        }
         mAuroraGlow.setCallback(null);
         mGlowOverlayHost = null;
     }

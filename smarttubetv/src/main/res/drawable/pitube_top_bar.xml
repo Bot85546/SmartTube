@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A softly fading translucent glass-like veil over the clock, search and
-     profile controls. No hard boundary or 1dp divider through the sidebar.
-     Uses native gradient drawing (no offscreen blur cost on older TVs). -->
+<!-- A long, soft translucent veil painted ABOVE video content but BELOW
+     the clock, search and profile controls. The sidebar is in front of the
+     veil, so its color remains uniform. Native gradient drawing costs no
+     offscreen blur passes on older TVs. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <gradient
         android:angle="270"
         android:startColor="#F2111B2C"
-        android:centerColor="#CB111B2C"
+        android:centerColor="#AD111B2C"
         android:endColor="#00111B2C" />
 </shape>

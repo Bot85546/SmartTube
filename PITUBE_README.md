@@ -15,13 +15,16 @@ Sony BRAVIA VH1 hardware. It is **not** an official YouTube or Sony application.
   190 ms fade of an animated aurora *shadow beneath* the selected card.
   Overlapping filled shapes create a continuous soft gradient with an inner
   underlap, so no focus stroke or pixel gap can appear atop the thumbnail.
-  Only the focused item animates at 20 fps; there are no software blur passes,
+  Only the focused item animates at 20 fps; decoration registration is
+  deferred until after RecyclerView layout on older TVs, avoiding
+  layout-state exceptions during the first focused video. There are no software blur passes,
   intermediate bitmaps, or network calls.
 - Native circular focus with a blue-white glass rim on title-bar controls,
   without Android's additional rectangular keyboard-focus highlight. The
   profile button no longer displays the redundant "None" tooltip.
 - Search/profile/time stay legible over scrolling videos thanks to a
-  translucent, softly fading top header veil without a hard bottom divider.
+  translucent, 205dp-tall softly fading top header veil behind the video
+  content (but below its controls), without a hard bottom divider.
   The navigation rail uses one colour from its top inset to its bottom edge,
   without exposed dark margins. The search glyph is high contrast on a dark orb.
 - Navigation labels stay stationary while each focused row paints its own
