@@ -28,8 +28,13 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Configure Gradle cache
+      - name: Configure pinned Gradle 7.5
         uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '7.5'
+          # The upstream source includes historical, unrecognized wrapper jars.
+          # Use the action's downloaded Gradle distribution, never those jars.
+          validate-wrappers: false
 
       - name: Use repository test signing key when configured
         env:
@@ -50,8 +55,7 @@ jobs:
 
       - name: Build PiTube TV and tablet preview
         run: |
-          chmod +x gradlew
-          ./gradlew --no-daemon --stacktrace :smarttubetv:assembleStpitubeDebug :smarttubetv:assembleStpitubetabletDebug
+          gradle --no-daemon --stacktrace :smarttubetv:assembleStpitubeDebug :smarttubetv:assembleStpitubetabletDebug
 
       - name: Check APKs and generate checksums
         shell: bash
