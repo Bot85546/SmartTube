@@ -1,4 +1,4 @@
-name: PiTube test APKs
+name: PiTube APKs (stable updates or isolated tests)
 
 on:
   push:
@@ -16,10 +16,6 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      # A distinct install identity for every test build avoids Android's
-      # signature-mismatch error without deleting the previously installed app.
-      PITUBE_TEST_BUILD_SUFFIX: ${{ github.run_number }}
     steps:
       - name: Checkout PiTube and submodules
         uses: actions/checkout@v4
@@ -40,10 +36,54 @@ jobs:
           # Use the action's downloaded Gradle distribution, never those jars.
           validate-wrappers: false
 
-      - name: Confirm isolated test app identity
+      - name: Configure persistent signing if available
+        shell: bash
+        env:
+          PITUBE_SIGNING_BUNDLE_B64: ${{ secrets.PITUBE_SIGNING_BUNDLE_B64 }}
         run: |
-          echo "New PiTube TV ID: dev.pradi.pitube.test${PITUBE_TEST_BUILD_SUFFIX}"
-          echo "New PiTube tablet ID: dev.pradi.pitube.preview.test${PITUBE_TEST_BUILD_SUFFIX}"
+          set -euo pipefail
+          if [[ -z "$PITUBE_SIGNING_BUNDLE_B64" ]]; then
+            echo "PITUBE_TEST_BUILD_SUFFIX=$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
+            echo "PITUBE_UPDATABLE=false" >> "$GITHUB_ENV"
+            echo "Permanent signing secret not configured; building isolated test apps."
+            exit 0
+          fi
+
+          signing_dir="$(mktemp -d)"
+          chmod 700 "$signing_dir"
+          printf '%s' "$PITUBE_SIGNING_BUNDLE_B64" |
+            base64 --decode | tar -xz -C "$signing_dir"
+          key_file="$(find "$signing_dir" -type f \( -name '*.jks' -o -name '*.keystore' -o -name '*.p12' \) -print -quit)"
+          props_file="$(find "$signing_dir" -type f -name 'keystore.properties' -print -quit)"
+          if [[ -z "$key_file" || -z "$props_file" ]]; then
+            echo "::error::Signing bundle needs a keystore and keystore.properties."
+            exit 1
+          fi
+          cp "$key_file" "$GITHUB_WORKSPACE/pitube-private.jks"
+          awk '
+            /^storeFile=/ { print "storeFile=../pitube-private.jks"; found=1; next }
+            { print }
+            END { if (!found) print "storeFile=../pitube-private.jks" }
+          ' "$props_file" > "$GITHUB_WORKSPACE/keystore.properties"
+          for key in storePassword keyAlias keyPassword; do
+            if ! grep -q "^$key=." "$GITHUB_WORKSPACE/keystore.properties"; then
+              echo "::error::Signing bundle is missing $key."
+              exit 1
+            fi
+          done
+          echo "PITUBE_TEST_BUILD_SUFFIX=" >> "$GITHUB_ENV"
+          echo "PITUBE_UPDATABLE=true" >> "$GITHUB_ENV"
+          echo "Signing configured for the permanent PiTube app IDs."
+
+      - name: Confirm app identity
+        run: |
+          if [[ "$PITUBE_UPDATABLE" == "true" ]]; then
+            echo "Updateable TV ID: dev.pradi.pitube"
+            echo "Updateable tablet ID: dev.pradi.pitube.preview"
+          else
+            echo "Isolated TV ID: dev.pradi.pitube.test${PITUBE_TEST_BUILD_SUFFIX}"
+            echo "Isolated tablet ID: dev.pradi.pitube.preview.test${PITUBE_TEST_BUILD_SUFFIX}"
+          fi
 
       - name: Build PiTube TV and tablet preview
         run: |
@@ -79,10 +119,19 @@ jobs:
           set -euo pipefail
           tv=(smarttubetv/build/outputs/apk/stpitube/debug/*_universal.apk)
           tablet=(smarttubetv/build/outputs/apk/stpitubetablet/debug/*_universal.apk)
-          gh release create "pitube-test-${GITHUB_RUN_NUMBER}" \
+          if [[ "$PITUBE_UPDATABLE" == "true" ]]; then
+            tag="pitube-update-${GITHUB_RUN_NUMBER}"
+            title="PiTube v18 updateable build ${GITHUB_RUN_NUMBER}"
+            notes="Permanently signed TV package: dev.pradi.pitube; tablet package: dev.pradi.pitube.preview. Newer PiTube releases signed with the same key and using the same package IDs install as updates without uninstalling this app. The first permanent build must be installed once; numbered test builds are independent apps."
+          else
+            tag="pitube-test-${GITHUB_RUN_NUMBER}"
+            title="PiTube v18 isolated test build ${GITHUB_RUN_NUMBER}"
+            notes="Permanent signing is not configured. TV package: dev.pradi.pitube.test${GITHUB_RUN_NUMBER}; tablet package: dev.pradi.pitube.preview.test${GITHUB_RUN_NUMBER}. These are isolated test apps and will NOT update one another. Add the PITUBE_SIGNING_BUNDLE_B64 Actions secret to switch this workflow to permanent app IDs and updateable signing."
+          fi
+          gh release create "$tag" \
             "${tv[0]}" "${tablet[0]}" PiTube-SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title "PiTube v17 isolated test build ${GITHUB_RUN_NUMBER}" \
-            --notes "TV package: dev.pradi.pitube.test${GITHUB_RUN_NUMBER}; tablet package: dev.pradi.pitube.preview.test${GITHUB_RUN_NUMBER}. Both install separately from all earlier PiTube builds, so you do not need to uninstall or clear the existing app. Each future test release uses another unique ID and is installed side-by-side, rather than updating previous test builds. Delete old versions only when you no longer need them." \
+            --title "$title" \
+            --notes "$notes" \
             --prerelease

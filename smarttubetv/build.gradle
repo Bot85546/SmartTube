@@ -29,8 +29,8 @@ def keystoreProperties = new Properties()
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 }
-// GitHub's numbered test builds are separate apps, so a changed CI signing key
-// cannot prevent installation alongside the user's previous PiTube build.
+// Numbered test builds use isolated IDs. With a permanent signing bundle
+// GitHub sets this to empty, keeping the TV and tablet IDs fixed for updates.
 def pitubePreviewSuffix = System.getenv('PITUBE_TEST_BUILD_SUFFIX')
 
 // The first letter of the flavor name must be in uppercase
@@ -63,7 +63,7 @@ android {
         // A unique increasing versionCode is required for seamless Android updates.
         // CI run numbers persist between builds on this repository.
         versionCode 2470 + (System.getenv('GITHUB_RUN_NUMBER') ?: '0').toInteger()
-        versionName "32.68-pitube.17"
+        versionName "32.68-pitube.18"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField "long", "TIMESTAMP", System.currentTimeMillis() + "L"
 

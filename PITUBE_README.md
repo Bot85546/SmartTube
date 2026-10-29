@@ -127,20 +127,32 @@ Local debug APKs use the developer's local debug keystore unless
 `keystore.properties` points to the permanent PiTube signing keystore.
 The universal APK should appear under
 `smarttubetv/build/outputs/apk/stpitube/debug/`, named similarly to
-`PiTube_pitube_32.68-pitube.17_universal.apk`. Keep the debug keystore if you
+`PiTube_pitube_32.68-pitube.18_universal.apk`. Keep the debug keystore if you
 want to update the same installation later. For distribution, use a dedicated
 release signing key.
 
-The GitHub Actions workflow now builds **isolated test applications**. Every
-run passes `PITUBE_TEST_BUILD_SUFFIX` set to the GitHub run number, yielding
-package IDs such as `dev.pradi.pitube.test5` and
-`dev.pradi.pitube.preview.test5`. This allows Android to install each test
-alongside every prior version, even though the CI runner uses its own debug
-key. Nothing is uninstalled and existing app data remains intact. The
-trade-off is that these builds are separate apps, **not in-place updates**;
-old test apps can be removed manually when no longer needed. Permanent in-place
-updating instead requires building the same package ID repeatedly with one
-private signing certificate that is safely retained between runs.
+The GitHub Actions workflow has two modes:
+
+- **Updateable PiTube:** Configure the single GitHub Actions secret
+  `PITUBE_SIGNING_BUNDLE_B64` using the private base64 signing bundle previously
+  saved as `PiTube-signing-secret.txt`. Every subsequent build uses fixed TV
+  and tablet application IDs (`dev.pradi.pitube` and
+  `dev.pradi.pitube.preview`), the same private certificate, and an increasing
+  version code. Releases use tags `pitube-update-N`; install once, then tap
+  Install on newer APKs to update in place with app data retained.
+- **Isolated test fallback:** Without the secret, builds continue using
+  `dev.pradi.pitube.testN` and `dev.pradi.pitube.preview.testN` and release
+  as `pitube-test-N`. These install alongside previous builds but cannot
+  replace them.
+
+To enable permanent updates: open your repository's **Settings > Secrets and
+variables > Actions > New repository secret**. Name it
+`PITUBE_SIGNING_BUNDLE_B64`, paste the entire base64 line from your private
+signing bundle, and save. Then run the **PiTube APKs** workflow once in GitHub
+Actions. Keep a private backup of the signing bundle. Never commit it or paste
+it into public issues. This permanent version is a *different package* from
+the earlier `.testN` apps, so the first installation is one-time; future
+updates do not need a reinstall.
 
 ## Build verification
 
@@ -149,7 +161,7 @@ using OpenJDK 17, Gradle 7.5, and Android SDK 34. The universal APK was
 verified to declare `dev.pradi.pitube`, advertise an Android TV launcher,
 contain ARMv7 and ARM64 libraries, and pass APK signature checks for v1/v2.
 This verifies packaging, not live YouTube playback or appearance on a TV.
-The current version is `32.68-pitube.17`; GitHub builds derive an increasing
+The current version is `32.68-pitube.18`; GitHub builds derive an increasing
 `versionCode` from the workflow run number (starting at 2470). APKs update
 previous PiTube installations only when the signing certificate matches.
 
@@ -160,6 +172,8 @@ no contrasting right edge. Video tiles now show a soft animated aurora
 PiTube v17 moves the video halo from the card's clipped drawing layer to
 Leanback's containing grid overlay, so it can actually render outside the
 thumbnail. The card interior is excluded from the glow with a reusable path.
+PiTube v18 adds persistent signed-update support to GitHub Actions; the
+rendering stays identical to v17.
 
 ## Installation
 

@@ -55,6 +55,9 @@ the right edge of the selected sidebar item for dark wedges or clipping.
 PiTube v17 specifically corrects an Android hardware clipping issue that
 could make the external video glow invisible. Check that a faint animated
 blue-violet-pink aura extends into the gap outside the focused video tile.
+For normal in-place updates from v18 onward, configure the one-time signing
+bundle secret described in `PITUBE_README.md`; numbered `.testN` preview
+packages will always remain separate applications.
 PiTube v15 had removed the floating sidebar highlight entirely, including the
 view-coordinate code associated with the earlier `IllegalArgumentException:
 parameter must be a descendant of this view` startup crash.
