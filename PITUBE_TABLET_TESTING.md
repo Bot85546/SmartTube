@@ -52,6 +52,9 @@ PiTube v16 retains the v15 row-owned sidebar highlight and removes the old
 inset video-card border. The sidebar glass uses multiple drifting colour
 fields, while a diffuse halo appears outside the focused video card. Check
 the right edge of the selected sidebar item for dark wedges or clipping.
+PiTube v17 specifically corrects an Android hardware clipping issue that
+could make the external video glow invisible. Check that a faint animated
+blue-violet-pink aura extends into the gap outside the focused video tile.
 PiTube v15 had removed the floating sidebar highlight entirely, including the
 view-coordinate code associated with the earlier `IllegalArgumentException:
 parameter must be a descendant of this view` startup crash.

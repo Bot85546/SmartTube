@@ -83,6 +83,6 @@ jobs:
             "${tv[0]}" "${tablet[0]}" PiTube-SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title "PiTube v16 isolated test build ${GITHUB_RUN_NUMBER}" \
+            --title "PiTube v17 isolated test build ${GITHUB_RUN_NUMBER}" \
             --notes "TV package: dev.pradi.pitube.test${GITHUB_RUN_NUMBER}; tablet package: dev.pradi.pitube.preview.test${GITHUB_RUN_NUMBER}. Both install separately from all earlier PiTube builds, so you do not need to uninstall or clear the existing app. Each future test release uses another unique ID and is installed side-by-side, rather than updating previous test builds. Delete old versions only when you no longer need them." \
             --prerelease

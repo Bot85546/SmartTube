@@ -4,6 +4,7 @@ import android.graphics.Canvas;
 import android.graphics.ColorFilter;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -16,19 +17,20 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 /**
- * A soft animated halo drawn BEHIND a selected video card, outside its bounds.
- * The card's own image and text cover the inner half of each translucent band:
- * there is deliberately no sharp line or foreground border over the thumbnail.
+ * A soft animated halo drawn in the video grid's overlay, outside the selected
+ * card. The even-odd clipping path excludes the entire card interior, so the
+ * translucent strokes never appear as an inset outline over the thumbnail.
  *
  * Three simple strokes share one shader, with no per-frame allocations, bitmap
  * blur, offscreen layers or animation on unselected cards.
  */
 public final class PiTubeAuroraGlowDrawable extends Drawable {
     private static final long FRAME_INTERVAL_MS = 50L;
-    private static final int[] HALO_ALPHA = {27, 38, 50};
+    private static final int[] HALO_ALPHA = {46, 65, 85};
 
     private final Paint[] mHalo = new Paint[3];
     private final RectF mCardBounds = new RectF();
+    private final Path mOutsideOnly = new Path();
     private final Matrix mMotion = new Matrix();
     private final float mDensity;
     private Shader mShader;
@@ -79,8 +81,16 @@ public final class PiTubeAuroraGlowDrawable extends Drawable {
     @Override
     protected void onBoundsChange(Rect bounds) {
         super.onBoundsChange(bounds);
-        mCardBounds.set(bounds.left + mDensity, bounds.top + mDensity,
-                bounds.right - mDensity, bounds.bottom - mDensity);
+        mCardBounds.set(bounds);
+        float spread = 20f * mDensity;
+        float radius = 19f * mDensity;
+        mOutsideOnly.reset();
+        mOutsideOnly.setFillType(Path.FillType.EVEN_ODD);
+        mOutsideOnly.addRect(mCardBounds.left - spread,
+                mCardBounds.top - spread, mCardBounds.right + spread,
+                mCardBounds.bottom + spread, Path.Direction.CW);
+        mOutsideOnly.addRoundRect(mCardBounds, radius, radius,
+                Path.Direction.CW);
         mShader = new SweepGradient(mCardBounds.centerX(),
                 mCardBounds.centerY(),
                 new int[] {0xFF40C7DC, 0xFF5B83F0, 0xFFB287D8,
@@ -93,10 +103,13 @@ public final class PiTubeAuroraGlowDrawable extends Drawable {
     @Override
     public void draw(@NonNull Canvas canvas) {
         if (mAlpha == 0 || mCardBounds.isEmpty()) return;
+        int saved = canvas.save();
+        canvas.clipPath(mOutsideOnly);
         float radius = 19f * mDensity;
         for (Paint paint : mHalo) {
             canvas.drawRoundRect(mCardBounds, radius, radius, paint);
         }
+        canvas.restoreToCount(saved);
     }
 
     @Override

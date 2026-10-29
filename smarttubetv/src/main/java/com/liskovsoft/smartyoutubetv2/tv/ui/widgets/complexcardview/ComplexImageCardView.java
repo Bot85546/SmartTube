@@ -1,18 +1,22 @@
 package com.liskovsoft.smartyoutubetv2.tv.ui.widgets.complexcardview;
 
 import android.animation.ValueAnimator;
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.content.Context;
-import android.graphics.Canvas;
-import android.graphics.drawable.Drawable;
+import android.graphics.Rect;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
+import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
+import android.view.ViewTreeObserver;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView.ScaleType;
 import android.widget.TextView;
 import androidx.leanback.widget.ImageCardView;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.Video;
 import com.liskovsoft.smartyoutubetv2.tv.R;
@@ -28,6 +32,14 @@ public class ComplexImageCardView extends ImageCardView {
     private PiTubeAuroraGlowDrawable mAuroraGlow;
     private ValueAnimator mGlowAnimator;
     private int mGlowAlpha;
+    private ViewGroup mGlowOverlayHost;
+    private final Rect mGlowPosition = new Rect();
+    private final int[] mCardWindowLocation = new int[2];
+    private final int[] mHostWindowLocation = new int[2];
+    private final ViewTreeObserver.OnPreDrawListener mGlowPositionListener = () -> {
+        syncGlowPosition();
+        return true;
+    };
 
     public ComplexImageCardView(Context context) {
         super(context);
@@ -53,30 +65,66 @@ public class ComplexImageCardView extends ImageCardView {
         if (!PiTubeCrashReporter.isSafeMode(getContext())) {
             mAuroraGlow = new PiTubeAuroraGlowDrawable(
                     getResources().getDisplayMetrics().density);
-            // Unlike a foreground outline, this halo is drawn *before* the
-            // card; the video and text hide its inside half.
-            mAuroraGlow.setCallback(this);
-            setClipChildren(false);
-            setClipToPadding(false);
-            setClipToOutline(false);
+            // The grid overlay renders outside the view's hardware clip.
+            // No foreground or background border is added to this card.
         }
     }
 
-    @Override
-    protected boolean verifyDrawable(Drawable who) {
-        return who == mAuroraGlow || super.verifyDrawable(who);
+    private void attachGlowOverlay() {
+        if (!isAttachedToWindow() || !(getParent() instanceof ViewGroup)) return;
+        // Leanback often wraps cards in ShadowOverlayContainer. Its own
+        // overlay would be exactly the size of the card and clip the aura.
+        // Attach to the ancestor RecyclerView, whose viewport has room for
+        // the halo on every side.
+        ViewGroup host = (ViewGroup) getParent();
+        ViewParent ancestor = host;
+        while (ancestor instanceof ViewGroup) {
+            if (ancestor instanceof RecyclerView) {
+                host = (ViewGroup) ancestor;
+                break;
+            }
+            ancestor = ancestor.getParent();
+        }
+        if (mGlowOverlayHost == host) return;
+        removeGlowOverlay();
+        mGlowOverlayHost = host;
+        host.getOverlay().add(mAuroraGlow);
+        getViewTreeObserver().addOnPreDrawListener(mGlowPositionListener);
+        syncGlowPosition();
     }
 
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        super.onSizeChanged(w, h, oldw, oldh);
-        if (mAuroraGlow != null) mAuroraGlow.setBounds(0, 0, w, h);
+    private void syncGlowPosition() {
+        if (mGlowOverlayHost == null || mAuroraGlow == null) return;
+        getLocationInWindow(mCardWindowLocation);
+        mGlowOverlayHost.getLocationInWindow(mHostWindowLocation);
+        float scaleX = getScaleX();
+        float scaleY = getScaleY();
+        ViewParent ancestor = getParent();
+        while (ancestor instanceof View && ancestor != mGlowOverlayHost) {
+            View container = (View) ancestor;
+            scaleX *= container.getScaleX();
+            scaleY *= container.getScaleY();
+            ancestor = container.getParent();
+        }
+        float scaledWidth = getWidth() * scaleX;
+        float scaledHeight = getHeight() * scaleY;
+        float left = mCardWindowLocation[0] - mHostWindowLocation[0];
+        float top = mCardWindowLocation[1] - mHostWindowLocation[1];
+        mGlowPosition.set(Math.round(left), Math.round(top),
+                Math.round(left + scaledWidth), Math.round(top + scaledHeight));
+        if (!mGlowPosition.equals(mAuroraGlow.getBounds())) {
+            mAuroraGlow.setBounds(mGlowPosition);
+        }
     }
 
-    @Override
-    public void draw(Canvas canvas) {
-        if (mAuroraGlow != null) mAuroraGlow.draw(canvas);
-        super.draw(canvas);
+    private void removeGlowOverlay() {
+        if (mGlowOverlayHost == null) return;
+        ViewTreeObserver observer = getViewTreeObserver();
+        if (observer.isAlive()) {
+            observer.removeOnPreDrawListener(mGlowPositionListener);
+        }
+        mGlowOverlayHost.getOverlay().remove(mAuroraGlow);
+        mGlowOverlayHost = null;
     }
 
     private void enableTitleAnimation(boolean enable) {
@@ -144,12 +192,15 @@ public class ComplexImageCardView extends ImageCardView {
 
     private void updateAuroraGlow(boolean selected) {
         if (mAuroraGlow == null) return;
+        if (selected) attachGlowOverlay();
         if (mGlowAnimator != null) mGlowAnimator.cancel();
-        mAuroraGlow.setActive(selected);
+        mAuroraGlow.setActive(selected && isAttachedToWindow()
+                && mGlowOverlayHost != null);
         int target = selected ? 255 : 0;
         if (!isAttachedToWindow() || mGlowAlpha == target) {
             mGlowAlpha = target;
             mAuroraGlow.setAlpha(target);
+            if (!selected) removeGlowOverlay();
             return;
         }
         mGlowAnimator = ValueAnimator.ofInt(mGlowAlpha, target);
@@ -158,6 +209,12 @@ public class ComplexImageCardView extends ImageCardView {
         mGlowAnimator.addUpdateListener(animation -> {
             mGlowAlpha = (int) animation.getAnimatedValue();
             mAuroraGlow.setAlpha(mGlowAlpha);
+        });
+        mGlowAnimator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                if (!isSelected()) removeGlowOverlay();
+            }
         });
         mGlowAnimator.start();
     }
@@ -172,6 +229,7 @@ public class ComplexImageCardView extends ImageCardView {
             mAuroraGlow.setActive(false);
             mAuroraGlow.setAlpha(0);
             mGlowAlpha = 0;
+            removeGlowOverlay();
         }
         super.onDetachedFromWindow();
     }
@@ -179,17 +237,6 @@ public class ComplexImageCardView extends ImageCardView {
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        if (mAuroraGlow != null) {
-            // Allow the glow to extend beyond the card, without changing the
-            // size or hit target of the card and without drawing over videos.
-            ViewParent parent = getParent();
-            for (int depth = 0; depth < 3 && parent instanceof ViewGroup; depth++) {
-                ViewGroup group = (ViewGroup) parent;
-                group.setClipChildren(false);
-                group.setClipToPadding(false);
-                parent = group.getParent();
-            }
-        }
         if (isSelected()) updateAuroraGlow(true);
     }
 
