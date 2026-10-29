@@ -116,10 +116,22 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
         if (root != null) root.setBackgroundColor(Color.rgb(10, 17, 29));
         View headersDock = root != null ? root.findViewById(R.id.browse_headers_dock) : null;
         if (headersDock != null) {
-            headersDock.setBackgroundColor(Color.TRANSPARENT);
+            // The whole dock uses the SAME color while the sidebar is open,
+            // including the space above the first row and below the last.
+            // When collapsed, clear it to avoid a permanent left-hand stripe.
+            headersDock.setBackgroundResource(isShowingHeaders()
+                    ? R.drawable.pitube_sidebar_panel : android.R.color.transparent);
             if (headersDock instanceof ViewGroup) {
                 ((ViewGroup) headersDock).setClipChildren(false);
             }
+            setBrowseTransitionListener(new BrowseTransitionListener() {
+                @Override
+                public void onHeadersTransitionStart(boolean withHeaders) {
+                    headersDock.setBackgroundResource(withHeaders
+                            ? R.drawable.pitube_sidebar_panel
+                            : android.R.color.transparent);
+                }
+            });
         }
         if (!PiTubeCrashReporter.isSafeMode(getContext()) && getHeadersSupportFragment() != null
                 && getHeadersSupportFragment().getVerticalGridView() != null) {
@@ -129,7 +141,7 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
             // D-pad focus moves, but the menu stays fixed until it overflows.
             grid.setTag("pitube:fixed-sidebar");
             grid.setFocusScrollStrategy(VerticalGridView.FOCUS_SCROLL_ITEM);
-            grid.setBackgroundColor(Color.TRANSPARENT);
+            grid.setBackgroundResource(R.drawable.pitube_sidebar_panel);
             grid.setClipChildren(false);
             View headersRoot = getHeadersSupportFragment().getView();
             if (headersRoot != null) {
@@ -145,13 +157,16 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
             }
             // The header rows own their glass backgrounds; do not draw a
             // separate capsule beneath Leanback's scrolling grid.
-            grid.setPadding(grid.getPaddingLeft(), 0, grid.getPaddingRight(),
-                    grid.getPaddingBottom());
+            // Keep the top and bottom insets within a full-height, uniform
+            // panel; margins previously exposed the darker browse backdrop.
+            grid.setPadding(grid.getPaddingLeft(), grid.getPaddingTop(),
+                    grid.getPaddingRight(), grid.getPaddingBottom());
             grid.setClipToPadding(false);
         }
         if (getTitleView() != null) {
-            // Avoid a separate top strip slicing through the navigation rail.
-            getTitleView().setBackgroundColor(Color.TRANSPARENT);
+            // Return the frosted header veil from v18. This protects the
+            // clock/date from thumbnails behind it without a hard bottom bar.
+            getTitleView().setBackgroundResource(R.drawable.pitube_top_bar);
         }
 
         setupEventListeners();

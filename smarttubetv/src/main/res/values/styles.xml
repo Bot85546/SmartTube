@@ -249,6 +249,15 @@
     </style>
     <!--  End Color scheme: Dark Blue (OLED)  -->
     <!-- Premium, restrained TV-first PiTube appearance. -->
+    <!-- The launcher renders this immediately, even before its first layout.
+         Native drawable only, so there is no splash decoder/animation delay. -->
+    <style name="App.Theme.PiTube.Launch" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@drawable/pitube_launch_background</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowActionModeOverlay">true</item>
+    </style>
+
     <style name="App.Theme.Pradi.Player" parent="App.Theme.DarkGrey.Player">
         <item name="android:windowBackground">@color/pradi_background</item>
         <item name="shelfBackground">@color/pradi_background</item>

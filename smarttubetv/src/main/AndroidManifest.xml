@@ -85,7 +85,7 @@
         <activity
             android:name="com.liskovsoft.smartyoutubetv2.tv.ui.main.PiTubeRecoveryActivity"
             android:exported="true"
-            android:theme="@android:style/Theme.Material.NoActionBar"
+            android:theme="@style/App.Theme.PiTube.Launch"
             android:screenOrientation="unspecified">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -99,6 +99,7 @@
         <!-- More info: com.liskovsoft.leanbackassistant.utils.AppUtil -->
         <activity
             android:name="com.liskovsoft.smartyoutubetv2.tv.ui.main.SplashActivity"
+            android:theme="@style/App.Theme.PiTube.Launch"
             android:exported="true"
             android:launchMode="singleInstance"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation|layoutDirection"

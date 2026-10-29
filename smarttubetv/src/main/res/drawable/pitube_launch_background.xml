@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- System window background while PiTube initializes. This is visible
+     during cold starts on older Android TV devices before Java draws a frame. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient android:angle="315"
+                android:startColor="#162A45"
+                android:centerColor="#101C30"
+                android:endColor="#080E19" />
+        </shape>
+    </item>
+    <item>
+        <bitmap
+            android:src="@mipmap/app_banner"
+            android:gravity="center"
+            android:filter="true" />
+    </item>
+</layer-list>

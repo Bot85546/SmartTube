@@ -4,7 +4,10 @@ import android.animation.ValueAnimator;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.content.Context;
+import android.graphics.Canvas;
 import android.graphics.Matrix;
+import android.graphics.drawable.Drawable;
+import android.os.SystemClock;
 import android.graphics.Outline;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -20,6 +23,7 @@ import android.view.ViewTreeObserver;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView.ScaleType;
 import android.widget.TextView;
+import androidx.annotation.NonNull;
 import androidx.leanback.widget.ImageCardView;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -37,7 +41,37 @@ public class ComplexImageCardView extends ImageCardView {
     private PiTubeAuroraGlowDrawable mAuroraGlow;
     private ValueAnimator mGlowAnimator;
     private int mGlowAlpha;
-    private ViewGroup mGlowOverlayHost;
+    private RecyclerView mGlowOverlayHost;
+    // Draw before children: the focused card covers the inner aura itself.
+    private final RecyclerView.ItemDecoration mGlowDecoration =
+            new RecyclerView.ItemDecoration() {
+                @Override
+                public void onDraw(@NonNull Canvas canvas, @NonNull RecyclerView parent,
+                        @NonNull RecyclerView.State state) {
+                    if (mAuroraGlow != null) mAuroraGlow.draw(canvas);
+                }
+            };
+    private final Drawable.Callback mGlowCallback = new Drawable.Callback() {
+        @Override
+        public void invalidateDrawable(@NonNull Drawable drawable) {
+            if (mGlowOverlayHost != null) mGlowOverlayHost.invalidate();
+        }
+
+        @Override
+        public void scheduleDrawable(@NonNull Drawable drawable,
+                @NonNull Runnable task, long when) {
+            if (mGlowOverlayHost != null) {
+                mGlowOverlayHost.postDelayed(task,
+                        Math.max(0L, when - SystemClock.uptimeMillis()));
+            }
+        }
+
+        @Override
+        public void unscheduleDrawable(@NonNull Drawable drawable,
+                @NonNull Runnable task) {
+            if (mGlowOverlayHost != null) mGlowOverlayHost.removeCallbacks(task);
+        }
+    };
     private final Rect mGlowPosition = new Rect();
     private final RectF mMappedCardBounds = new RectF();
     private final Matrix mGlowTransform = new Matrix();
@@ -84,32 +118,33 @@ public class ComplexImageCardView extends ImageCardView {
         if (!PiTubeCrashReporter.isSafeMode(getContext())) {
             mAuroraGlow = new PiTubeAuroraGlowDrawable(
                     getResources().getDisplayMetrics().density);
-            // The grid overlay renders outside the view's hardware clip.
-            // No foreground or background border is added to this card.
+            // The card covers the inner edge of its own underlay halo.
+            // No border or glow is ever painted on top of its thumbnail.
         }
     }
 
     private void attachGlowOverlay() {
-        if (!isAttachedToWindow() || !(getParent() instanceof ViewGroup)) return;
-        // Leanback often wraps cards in ShadowOverlayContainer. Its own
-        // overlay would be exactly the size of the card and clip the aura.
-        // Attach to the ancestor RecyclerView, whose viewport has room for
-        // the halo on every side.
-        ViewGroup host = (ViewGroup) getParent();
-        ViewParent ancestor = host;
+        if (!isAttachedToWindow() || mAuroraGlow == null) return;
+
+        // Leanback wraps cards in focus-scaled ShadowOverlayContainer views.
+        // The row RecyclerView can paint our shadow BEHIND those children.
+        RecyclerView host = null;
+        ViewParent ancestor = getParent();
         while (ancestor instanceof ViewGroup) {
             if (ancestor instanceof RecyclerView) {
-                host = (ViewGroup) ancestor;
+                host = (RecyclerView) ancestor;
                 break;
             }
             ancestor = ancestor.getParent();
         }
-        if (mGlowOverlayHost == host) return;
+        if (host == null || mGlowOverlayHost == host) return;
         removeGlowOverlay();
         mGlowOverlayHost = host;
-        host.getOverlay().add(mAuroraGlow);
+        mAuroraGlow.setCallback(mGlowCallback);
+        host.addItemDecoration(mGlowDecoration, 0);
         getViewTreeObserver().addOnPreDrawListener(mGlowPositionListener);
         syncGlowPosition();
+        host.invalidate();
     }
 
     private void syncGlowPosition() {
@@ -141,7 +176,9 @@ public class ComplexImageCardView extends ImageCardView {
         if (observer.isAlive()) {
             observer.removeOnPreDrawListener(mGlowPositionListener);
         }
-        mGlowOverlayHost.getOverlay().remove(mAuroraGlow);
+        mAuroraGlow.setActive(false);
+        mGlowOverlayHost.removeItemDecoration(mGlowDecoration);
+        mAuroraGlow.setCallback(null);
         mGlowOverlayHost = null;
     }
 

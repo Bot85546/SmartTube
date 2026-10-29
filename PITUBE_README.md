@@ -11,15 +11,19 @@ Sony BRAVIA VH1 hardware. It is **not** an official YouTube or Sony application.
 - Reworked TV-first, Apple TV-inspired look: navy glass-style navigation rail,
   persistent translucent top toolbar, deep-slate content, brighter glass focus
   pills, and a matching search experience. Other upstream themes remain selectable.
-- Lightweight remote-focus animation: Leanback's native card zoom plus a
-  170 ms opacity fade of a gradient glass outline. Only the focused item moves
-  its shader colours and precomputed noise at 20 fps; no live blur, extra
-  image allocations per frame, or network calls.
+- Lightweight remote-focus animation: Leanback's native card zoom and a
+  190 ms fade of an animated aurora *shadow beneath* the selected card.
+  Overlapping filled shapes create a continuous soft gradient with an inner
+  underlap, so no focus stroke or pixel gap can appear atop the thumbnail.
+  Only the focused item animates at 20 fps; there are no software blur passes,
+  intermediate bitmaps, or network calls.
 - Native circular focus with a blue-white glass rim on title-bar controls,
   without Android's additional rectangular keyboard-focus highlight. The
   profile button no longer displays the redundant "None" tooltip.
-- Search/profile buttons stay on-screen while browsing Music, Channels, and
-  other sections. The search glyph is larger and high contrast on a dark orb.
+- Search/profile/time stay legible over scrolling videos thanks to a
+  translucent, softly fading top header veil without a hard bottom divider.
+  The navigation rail uses one colour from its top inset to its bottom edge,
+  without exposed dark margins. The search glyph is high contrast on a dark orb.
 - Navigation labels stay stationary while each focused row paints its own
   animated glass background behind the icon and label. The menu only scrolls
   when it genuinely overflows, below the persistent toolbar.
@@ -45,6 +49,8 @@ Sony BRAVIA VH1 hardware. It is **not** an official YouTube or Sony application.
 - A separately installable **PiTube Preview** flavor for Galaxy Tab S11 Ultra,
   with a 16:9 landscape testing canvas and touch-enabled TV navigation. This
   flavor does not alter the Sony BRAVIA APK or its installed preferences.
+- A branded animated launch view and native first-window background make
+  cold starts feel responsive while account and service initialization runs.
 - Offline crash reports saved in app-private storage when an uncaught Java
   exception terminates PiTube. The next launcher start presents an independent
   recovery interface with Copy, Save to file and Share options. A separate
