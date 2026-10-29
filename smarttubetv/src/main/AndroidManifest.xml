@@ -84,6 +84,7 @@
              application's Leanback home screen is unable to initialize. -->
         <activity
             android:name="com.liskovsoft.smartyoutubetv2.tv.ui.main.PiTubeRecoveryActivity"
+            android:process=":launch"
             android:exported="true"
             android:theme="@style/App.Theme.PiTube.Launch"
             android:screenOrientation="unspecified">

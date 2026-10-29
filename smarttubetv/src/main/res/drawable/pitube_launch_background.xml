@@ -1,18 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- System window background while PiTube initializes. This is visible
-     during cold starts on older Android TV devices before Java draws a frame. -->
+<!-- The system draws this while Android starts the lightweight launcher.
+     The wordmark is transparent, so there is no embedded rectangle or rim. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item>
-        <shape android:shape="rectangle">
-            <gradient android:angle="315"
-                android:startColor="#162A45"
-                android:centerColor="#101C30"
-                android:endColor="#080E19" />
-        </shape>
-    </item>
+    <item android:drawable="@drawable/pitube_launch_surface" />
     <item>
         <bitmap
-            android:src="@mipmap/app_banner"
+            android:src="@drawable/pitube_wordmark"
             android:gravity="center"
             android:filter="true" />
     </item>

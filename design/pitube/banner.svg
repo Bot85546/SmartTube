@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360">
+  <defs>
+    <linearGradient id="base" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#162943"/>
+      <stop offset="0.58" stop-color="#13233d"/>
+      <stop offset="1" stop-color="#11182f"/>
+    </linearGradient>
+    <radialGradient id="haze" cx="0.25" cy="0.52" r="0.83">
+      <stop offset="0" stop-color="#365c94" stop-opacity="0.27"/>
+      <stop offset="1" stop-color="#12213a" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="640" height="360" fill="url(#base)"/>
+  <rect width="640" height="360" fill="url(#haze)"/>
+  <rect x="123" y="134" width="114" height="92" rx="25" fill="#DDE9FF"/>
+  <path d="M 167,155 L 167,205 L 208,180 Z" fill="#101D34"/>
+  <text x="263" y="205" font-family="DejaVu Sans" font-size="72" font-weight="bold" letter-spacing="-3" fill="#F5F7FF">PiTube</text>
+</svg>

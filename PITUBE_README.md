@@ -6,8 +6,10 @@ Sony BRAVIA VH1 hardware. It is **not** an official YouTube or Sony application.
 
 ## Included in this customization
 
-- Original PiTube launcher icon, banner, and separate package ID
-  (`dev.pradi.pitube`). It can coexist with upstream SmartTube.
+- Centered, borderless PiTube launcher icon and TV banner, plus separate
+  package ID (`dev.pradi.pitube`). It can coexist with upstream SmartTube.
+  Editable vector masters for the icon, banner and splash wordmark live in
+  `design/pitube/`.
 - Reworked TV-first, Apple TV-inspired look: navy glass-style navigation rail,
   persistent translucent top toolbar, deep-slate content, brighter glass focus
   pills, and a matching search experience. Other upstream themes remain selectable.
@@ -52,8 +54,11 @@ Sony BRAVIA VH1 hardware. It is **not** an official YouTube or Sony application.
 - A separately installable **PiTube Preview** flavor for Galaxy Tab S11 Ultra,
   with a 16:9 landscape testing canvas and touch-enabled TV navigation. This
   flavor does not alter the Sony BRAVIA APK or its installed preferences.
-- A branded animated launch view and native first-window background make
-  cold starts feel responsive while account and service initialization runs.
+- A shared full-bleed, borderless PiTube loading screen uses a transparent
+  wordmark and subtle animation. The minimal launcher runs temporarily in
+  `:launch`, so it can display immediately and keep animating while the main
+  process performs its existing Conscrypt and service initialization. This
+  briefly uses a second process during cold startup; no heavy work is duplicated.
 - Offline crash reports saved in app-private storage when an uncaught Java
   exception terminates PiTube. The next launcher start presents an independent
   recovery interface with Copy, Save to file and Share options. A separate

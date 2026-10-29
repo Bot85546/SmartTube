@@ -1,6 +1,7 @@
 package com.liskovsoft.smartyoutubetv2.tv.ui.main;
 
 import android.app.Activity;
+import android.animation.ObjectAnimator;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.ClipboardManager;
@@ -24,12 +25,20 @@ import java.nio.charset.StandardCharsets;
 /** Minimal Android-native recovery UI, independent of Leanback and the home screen. */
 public class PiTubeRecoveryActivity extends Activity {
     private static final int SAVE_REPORT_REQUEST = 81;
+    private ObjectAnimator mLoadingPulse;
+    private boolean mLaunchingApp;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (!PiTubeCrashReporter.shouldShowRecovery(this)) {
-            launchPiTube();
+            // Render our real splash BEFORE starting the heavyweight main
+            // process. The short post allows the launcher to draw its first
+            // frame; its pulse then runs independently of main-process setup.
+            mLoadingPulse = PiTubeLaunchScreen.install(this);
+            getWindow().getDecorView().postDelayed(() -> {
+                if (!isFinishing() && !isDestroyed()) launchPiTube();
+            }, 70L);
             return;
         }
         showRecovery();
@@ -156,9 +165,27 @@ public class PiTubeRecoveryActivity extends Activity {
     }
 
     private void launchPiTube() {
-        ((MainApplication) getApplication()).ensurePiTubeInitialized();
+        if (mLaunchingApp) return;
+        mLaunchingApp = true;
+        // PiTubeRecoveryActivity runs in :launch, while SplashActivity starts
+        // the actual app in the default process. Keep this animated splash
+        // visible behind Android's transition until the new window appears.
         startActivity(new Intent(this, SplashActivity.class));
-        finish();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (mLaunchingApp) finish();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (mLoadingPulse != null) {
+            mLoadingPulse.cancel();
+            mLoadingPulse = null;
+        }
+        super.onDestroy();
     }
 
     private void saveReport() {

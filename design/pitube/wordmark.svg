@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" width="640" height="360">
+  <rect x="123" y="134" width="114" height="92" rx="25" fill="#DDE9FF"/>
+  <path d="M 167,155 L 167,205 L 208,180 Z" fill="#101D34"/>
+  <text x="263" y="205" font-family="DejaVu Sans" font-size="72" font-weight="bold" letter-spacing="-3" fill="#F5F7FF">PiTube</text>
+</svg>

@@ -1,6 +1,8 @@
 package com.liskovsoft.smartyoutubetv2.tv.ui.main;
 
 import android.content.Context;
+import android.app.ActivityManager;
+import android.app.Application;
 import android.os.Build.VERSION;
 
 import androidx.annotation.NonNull;
@@ -68,12 +70,29 @@ public class MainApplication extends MultiDexApplication implements Configuratio
     public void onCreate() {
         super.onCreate();
 
-        if (!PiTubeCrashReporter.shouldShowRecovery(this)) {
+        // The launcher lives briefly in a separate process so its splash
+        // animates while the main process performs Conscrypt and app setup.
+        // Other entry points retain the existing initialization behavior.
+        if (!isPiTubeLaunchProcess() && !PiTubeCrashReporter.shouldShowRecovery(this)) {
             ensurePiTubeInitialized();
         }
     }
 
-    /** The recovery screen can initialize the normal app without restarting Android. */
+    private boolean isPiTubeLaunchProcess() {
+        String processName;
+        if (VERSION.SDK_INT >= 28) {
+            processName = Application.getProcessName();
+        } else {
+            ActivityManager.RunningAppProcessInfo state =
+                    new ActivityManager.RunningAppProcessInfo();
+            ActivityManager.getMyMemoryState(state);
+            processName = state.processName;
+        }
+        return processName != null
+                && processName.equals(getPackageName() + ":launch");
+    }
+
+    /** Initialize network and app services once in the main process. */
     public synchronized void ensurePiTubeInitialized() {
         if (mPiTubeInitialized) {
             return;
