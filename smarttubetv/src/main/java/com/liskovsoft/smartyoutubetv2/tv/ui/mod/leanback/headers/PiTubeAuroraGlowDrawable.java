@@ -17,32 +17,34 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 /**
- * A soft animated halo drawn in the video grid's overlay, outside the selected
- * card. The even-odd clipping path excludes the entire card interior, so the
- * translucent strokes never appear as an inset outline over the thumbnail.
- *
- * Three simple strokes share one shader, with no per-frame allocations, bitmap
- * blur, offscreen layers or animation on unselected cards.
+ * A thin, softly feathered aurora around the focused video card. Fine,
+ * overlapping translucent bands approximate a blurred falloff, instead of
+ * rendering a clearly visible border or using a costly software blur.
+ * The shader animates only for the focused card, at 20fps.
  */
 public final class PiTubeAuroraGlowDrawable extends Drawable {
     private static final long FRAME_INTERVAL_MS = 50L;
-    private static final int[] HALO_ALPHA = {46, 65, 85};
+    private static final int GLOW_LAYERS = 20;
+    private static final float GLOW_SPREAD_DP = 11f;
+    private static final float CORNER_RADIUS_DP = 22f;
+    private static final float STROKE_WIDTH_DP = 1.5f;
 
-    private final Paint[] mHalo = new Paint[3];
+    private final Paint mGlow = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final RectF mCardBounds = new RectF();
+    private final RectF mBandBounds = new RectF();
     private final Path mOutsideOnly = new Path();
     private final Matrix mMotion = new Matrix();
     private final float mDensity;
     private Shader mShader;
     private float mPhase;
     private int mAlpha;
+    private float mCornerRadiusPx;
     private boolean mActive;
 
     private final Runnable mAnimation = new Runnable() {
-        @Override
-        public void run() {
+        @Override public void run() {
             if (!mActive) return;
-            mPhase = (mPhase + 0.007f) % 1f;
+            mPhase = (mPhase + 0.0035f) % 1f;
             moveShader();
             invalidateSelf();
             scheduleSelf(this, SystemClock.uptimeMillis() + FRAME_INTERVAL_MS);
@@ -51,14 +53,10 @@ public final class PiTubeAuroraGlowDrawable extends Drawable {
 
     public PiTubeAuroraGlowDrawable(float density) {
         mDensity = density;
-        float[] widths = {29f, 19f, 10f};
-        for (int i = 0; i < mHalo.length; i++) {
-            Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeJoin(Paint.Join.ROUND);
-            paint.setStrokeWidth(widths[i] * density);
-            mHalo[i] = paint;
-        }
+        mCornerRadiusPx = CORNER_RADIUS_DP * density;
+        mGlow.setStyle(Paint.Style.STROKE);
+        mGlow.setStrokeJoin(Paint.Join.ROUND);
+        mGlow.setStrokeWidth(STROKE_WIDTH_DP * density);
         setAlpha(0);
     }
 
@@ -72,6 +70,25 @@ public final class PiTubeAuroraGlowDrawable extends Drawable {
         invalidateSelf();
     }
 
+    public void setCornerRadiusPx(float radius) {
+        if (Math.abs(mCornerRadiusPx - radius) < 0.15f) return;
+        mCornerRadiusPx = radius;
+        rebuildOutsideClip();
+        invalidateSelf();
+    }
+
+    private void rebuildOutsideClip() {
+        float margin = (GLOW_SPREAD_DP + STROKE_WIDTH_DP + 1f) * mDensity;
+        mOutsideOnly.reset();
+        mOutsideOnly.setFillType(Path.FillType.EVEN_ODD);
+        mOutsideOnly.addRect(mCardBounds.left - margin,
+                mCardBounds.top - margin,
+                mCardBounds.right + margin,
+                mCardBounds.bottom + margin, Path.Direction.CW);
+        mOutsideOnly.addRoundRect(mCardBounds, mCornerRadiusPx,
+                mCornerRadiusPx, Path.Direction.CW);
+    }
+
     private void moveShader() {
         mMotion.setRotate(360f * mPhase,
                 mCardBounds.centerX(), mCardBounds.centerY());
@@ -82,32 +99,42 @@ public final class PiTubeAuroraGlowDrawable extends Drawable {
     protected void onBoundsChange(Rect bounds) {
         super.onBoundsChange(bounds);
         mCardBounds.set(bounds);
-        float spread = 20f * mDensity;
-        float radius = 19f * mDensity;
-        mOutsideOnly.reset();
-        mOutsideOnly.setFillType(Path.FillType.EVEN_ODD);
-        mOutsideOnly.addRect(mCardBounds.left - spread,
-                mCardBounds.top - spread, mCardBounds.right + spread,
-                mCardBounds.bottom + spread, Path.Direction.CW);
-        mOutsideOnly.addRoundRect(mCardBounds, radius, radius,
-                Path.Direction.CW);
+        rebuildOutsideClip();
+
         mShader = new SweepGradient(mCardBounds.centerX(),
                 mCardBounds.centerY(),
-                new int[] {0xFF40C7DC, 0xFF5B83F0, 0xFFB287D8,
-                        0xFFD28ABB, 0xFF58B7D9, 0xFF40C7DC},
-                new float[] {0f, 0.19f, 0.43f, 0.65f, 0.83f, 1f});
-        for (Paint paint : mHalo) paint.setShader(mShader);
+                new int[] {0xFF6BBFD8, 0xFF759CE5, 0xFFAD9BDC,
+                        0xFFD3A5C5, 0xFF8BACEA, 0xFF6BBFD8},
+                new float[] {0f, 0.21f, 0.45f, 0.67f, 0.84f, 1f});
+        mGlow.setShader(mShader);
         moveShader();
     }
 
     @Override
     public void draw(@NonNull Canvas canvas) {
         if (mAlpha == 0 || mCardBounds.isEmpty()) return;
+
         int saved = canvas.save();
         canvas.clipPath(mOutsideOnly);
-        float radius = 19f * mDensity;
-        for (Paint paint : mHalo) {
-            canvas.drawRoundRect(mCardBounds, radius, radius, paint);
+        float radius = mCornerRadiusPx;
+        float spread = GLOW_SPREAD_DP * mDensity;
+
+        for (int i = 0; i < GLOW_LAYERS; i++) {
+            float distance = i / (float) (GLOW_LAYERS - 1);
+            // Fade continuously, from subtle illumination at the card to
+            // fully transparent at the outer edge. No visible contour.
+            float falloff = 1f - distance;
+            int alpha = Math.round(43f * falloff * falloff * mAlpha / 255f);
+            if (alpha == 0) continue;
+
+            float expand = spread * distance;
+            mBandBounds.set(mCardBounds.left - expand,
+                    mCardBounds.top - expand,
+                    mCardBounds.right + expand,
+                    mCardBounds.bottom + expand);
+            mGlow.setAlpha(alpha);
+            canvas.drawRoundRect(mBandBounds, radius + expand,
+                    radius + expand, mGlow);
         }
         canvas.restoreToCount(saved);
     }
@@ -115,20 +142,16 @@ public final class PiTubeAuroraGlowDrawable extends Drawable {
     @Override
     public void setAlpha(int alpha) {
         mAlpha = Math.max(0, Math.min(255, alpha));
-        for (int i = 0; i < mHalo.length; i++) {
-            mHalo[i].setAlpha(HALO_ALPHA[i] * mAlpha / 255);
-        }
         invalidateSelf();
     }
 
     @Override
-    public void setColorFilter(@Nullable ColorFilter colorFilter) {
-        for (Paint paint : mHalo) paint.setColorFilter(colorFilter);
+    public void setColorFilter(@Nullable ColorFilter filter) {
+        mGlow.setColorFilter(filter);
         invalidateSelf();
     }
 
-    @Override
-    public int getOpacity() {
+    @Override public int getOpacity() {
         return PixelFormat.TRANSLUCENT;
     }
 }

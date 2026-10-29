@@ -127,7 +127,7 @@ Local debug APKs use the developer's local debug keystore unless
 `keystore.properties` points to the permanent PiTube signing keystore.
 The universal APK should appear under
 `smarttubetv/build/outputs/apk/stpitube/debug/`, named similarly to
-`PiTube_pitube_32.68-pitube.18_universal.apk`. Keep the debug keystore if you
+`PiTube_pitube_32.68-pitube.19_universal.apk`. Keep the debug keystore if you
 want to update the same installation later. For distribution, use a dedicated
 release signing key.
 
@@ -161,7 +161,7 @@ using OpenJDK 17, Gradle 7.5, and Android SDK 34. The universal APK was
 verified to declare `dev.pradi.pitube`, advertise an Android TV launcher,
 contain ARMv7 and ARM64 libraries, and pass APK signature checks for v1/v2.
 This verifies packaging, not live YouTube playback or appearance on a TV.
-The current version is `32.68-pitube.18`; GitHub builds derive an increasing
+The current version is `32.68-pitube.19`; GitHub builds derive an increasing
 `versionCode` from the workflow run number (starting at 2470). APKs update
 previous PiTube installations only when the signing certificate matches.
 

@@ -4,7 +4,9 @@ import android.animation.ValueAnimator;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.content.Context;
+import android.graphics.Matrix;
 import android.graphics.Rect;
+import android.graphics.RectF;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
@@ -34,8 +36,8 @@ public class ComplexImageCardView extends ImageCardView {
     private int mGlowAlpha;
     private ViewGroup mGlowOverlayHost;
     private final Rect mGlowPosition = new Rect();
-    private final int[] mCardWindowLocation = new int[2];
-    private final int[] mHostWindowLocation = new int[2];
+    private final RectF mMappedCardBounds = new RectF();
+    private final Matrix mGlowTransform = new Matrix();
     private final ViewTreeObserver.OnPreDrawListener mGlowPositionListener = () -> {
         syncGlowPosition();
         return true;
@@ -95,23 +97,22 @@ public class ComplexImageCardView extends ImageCardView {
 
     private void syncGlowPosition() {
         if (mGlowOverlayHost == null || mAuroraGlow == null) return;
-        getLocationInWindow(mCardWindowLocation);
-        mGlowOverlayHost.getLocationInWindow(mHostWindowLocation);
-        float scaleX = getScaleX();
-        float scaleY = getScaleY();
-        ViewParent ancestor = getParent();
-        while (ancestor instanceof View && ancestor != mGlowOverlayHost) {
-            View container = (View) ancestor;
-            scaleX *= container.getScaleX();
-            scaleY *= container.getScaleY();
-            ancestor = container.getParent();
-        }
-        float scaledWidth = getWidth() * scaleX;
-        float scaledHeight = getHeight() * scaleY;
-        float left = mCardWindowLocation[0] - mHostWindowLocation[0];
-        float top = mCardWindowLocation[1] - mHostWindowLocation[1];
-        mGlowPosition.set(Math.round(left), Math.round(top),
-                Math.round(left + scaledWidth), Math.round(top + scaledHeight));
+        if (getWidth() <= 0 || getHeight() <= 0) return;
+
+        // Match the transformed Leanback card precisely, including focus
+        // zoom and translated/scaled ShadowOverlayContainer ancestors.
+        mGlowTransform.reset();
+        transformMatrixToGlobal(mGlowTransform);
+        mGlowOverlayHost.transformMatrixToLocal(mGlowTransform);
+        mMappedCardBounds.set(0f, 0f, getWidth(), getHeight());
+        mGlowTransform.mapRect(mMappedCardBounds);
+        mAuroraGlow.setCornerRadiusPx(
+                getResources().getDimension(R.dimen.lb_rounded_rect_corner_radius)
+                        * mMappedCardBounds.width() / getWidth());
+        mGlowPosition.set(Math.round(mMappedCardBounds.left),
+                Math.round(mMappedCardBounds.top),
+                Math.round(mMappedCardBounds.right),
+                Math.round(mMappedCardBounds.bottom));
         if (!mGlowPosition.equals(mAuroraGlow.getBounds())) {
             mAuroraGlow.setBounds(mGlowPosition);
         }

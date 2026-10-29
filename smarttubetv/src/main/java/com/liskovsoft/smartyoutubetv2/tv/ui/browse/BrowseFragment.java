@@ -112,6 +112,8 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
         // the permanent dock instead left a coloured strip on the video page.
         PiTubeCrashReporter.note("BrowseFragment: onActivityCreated");
         View root = getView();
+        // A continuous near-black surface replaces the disjoint dark strips.
+        if (root != null) root.setBackgroundColor(Color.rgb(10, 17, 29));
         View headersDock = root != null ? root.findViewById(R.id.browse_headers_dock) : null;
         if (headersDock != null) {
             headersDock.setBackgroundColor(Color.TRANSPARENT);
@@ -148,7 +150,8 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
             grid.setClipToPadding(false);
         }
         if (getTitleView() != null) {
-            getTitleView().setBackgroundResource(R.drawable.pitube_top_bar);
+            // Avoid a separate top strip slicing through the navigation rail.
+            getTitleView().setBackgroundColor(Color.TRANSPARENT);
         }
 
         setupEventListeners();
@@ -254,15 +257,14 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
         setHeadersState(HEADERS_ENABLED);
         setHeadersTransitionOnBackEnabled(true);
 
-        int brandColorRes = Helpers.getThemeAttr(getContext(), R.attr.brandColor);
-
         updateBadge();
 
         // This title replaces badge in case one is null
         //setTitle(getString(R.string.browse_title));
 
         // Set fastLane (or headers) background color
-        setBrandColor(ContextCompat.getColor(getContext(), brandColorRes));
+        // Match Leanback's backing header surface to our full-height rail.
+        setBrandColor(Color.rgb(17, 27, 44));
 
         // Set search icon color.
         // SearchOrbView's icon is white. A pale-blue orb made it almost
