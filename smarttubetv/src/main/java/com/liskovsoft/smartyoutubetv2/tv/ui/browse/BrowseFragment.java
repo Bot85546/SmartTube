@@ -108,15 +108,16 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        // Keep the sidebar background behind the movable focus capsule.
+        // The navigation panel must move with the headers fragment. Painting
+        // the permanent dock instead left a coloured strip on the video page.
         PiTubeCrashReporter.note("BrowseFragment: onActivityCreated");
-        // The headers dock occupies the whole height of the browse screen.
-        // Painting it avoids the exposed black strip between the compact
-        // title bar and the first navigation item.
         View root = getView();
         View headersDock = root != null ? root.findViewById(R.id.browse_headers_dock) : null;
         if (headersDock != null) {
-            headersDock.setBackgroundResource(R.drawable.pitube_sidebar_panel);
+            headersDock.setBackgroundColor(Color.TRANSPARENT);
+            if (headersDock instanceof ViewGroup) {
+                ((ViewGroup) headersDock).setClipChildren(false);
+            }
         }
         if (!PiTubeCrashReporter.isSafeMode(getContext()) && getHeadersSupportFragment() != null
                 && getHeadersSupportFragment().getVerticalGridView() != null) {
@@ -127,12 +128,16 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
             grid.setTag("pitube:fixed-sidebar");
             grid.setFocusScrollStrategy(VerticalGridView.FOCUS_SCROLL_ITEM);
             grid.setBackgroundColor(Color.TRANSPARENT);
+            grid.setClipChildren(false);
             View headersRoot = getHeadersSupportFragment().getView();
             if (headersRoot != null) {
-                headersRoot.setBackgroundColor(Color.TRANSPARENT);
+                headersRoot.setBackgroundResource(R.drawable.pitube_sidebar_panel);
+                if (headersRoot instanceof ViewGroup) {
+                    ((ViewGroup) headersRoot).setClipChildren(false);
+                }
             }
-            // Header clearance is declared once in lb_headers_fragment.xml.
-            // Avoid repeated programmatic margin changes during re-attachment.
+            // The header rows own their glass backgrounds; do not draw a
+            // separate capsule beneath Leanback's scrolling grid.
             grid.setPadding(grid.getPaddingLeft(), 0, grid.getPaddingRight(),
                     grid.getPaddingBottom());
             grid.setClipToPadding(false);

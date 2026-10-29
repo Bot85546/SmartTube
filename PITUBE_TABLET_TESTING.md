@@ -16,8 +16,8 @@ This is a separate **tablet testing build** of the same PiTube Cinema UI.
   Android TV launcher; keyboard/D-pad navigation uses the TV interaction model.
 - System-generated rectangular focus highlights are disabled on the top-row
   round buttons and search controls, preserving PiTube's circular focus style.
-- The profile orb has no focus tooltip. Sidebar labels remain stationary while
-  a single glass focus capsule moves behind the selected item.
+- The profile orb has no focus tooltip. Sidebar labels remain stationary;
+  each selected row renders animated glass behind its own icon and label.
 - Search from Browse opens inside the same activity with a short compositor-
   only transition; it is no longer a separate task switch.
 
@@ -38,7 +38,8 @@ to the TV's 1920 x 1080 logical proportions. Nothing is stretched.
    black top and bottom bands.
 3. Use the attached keyboard's arrow keys and Enter to navigate the sidebar;
    Home and the remaining labels should all begin beneath the top toolbar.
-   The labels should stay fixed as the glass capsule moves between them.
+   The labels should stay fixed and every selected row should show its glass
+   background directly behind the icon and label.
    Move from video content to the menu with Left; the menu should begin opening
    immediately, without the previous 150 ms pause.
 4. Open Search and press Back/Escape; the existing Browse screen should return
@@ -47,8 +48,9 @@ to the TV's 1920 x 1080 logical proportions. Nothing is stretched.
 
 ## If PiTube crashes on startup
 
-PiTube v10 retains the v8 fix for the earlier `IllegalArgumentException:
-parameter must be a descendant of this view` in the sidebar highlight.
+PiTube v15 removes the old floating sidebar highlight entirely, including the
+view-coordinate code associated with the earlier `IllegalArgumentException:
+parameter must be a descendant of this view` startup crash.
 The crash reporter remains enabled in case another issue is found.
 
 1. Launch **PiTube Preview** again. The crash reporter should open before

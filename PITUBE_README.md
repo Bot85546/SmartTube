@@ -20,9 +20,9 @@ Sony BRAVIA VH1 hardware. It is **not** an official YouTube or Sony application.
   profile button no longer displays the redundant "None" tooltip.
 - Search/profile buttons stay on-screen while browsing Music, Channels, and
   other sections. The search glyph is larger and high contrast on a dark orb.
-- Navigation labels stay stationary as one independent, animated glass capsule
-  moves behind them; the menu only scrolls when it genuinely overflows.
-  The rail is positioned below the persistent toolbar.
+- Navigation labels stay stationary while each focused row paints its own
+  animated glass background behind the icon and label. The menu only scrolls
+  when it genuinely overflows, below the persistent toolbar.
 - Search from Browse now opens an animated overlay **in the same activity**,
   instead of launching a new Android task. Search keeps its existing keyboard,
   voice and suggestion logic but uses matching dark-glass colors and round
@@ -76,6 +76,13 @@ Sony BRAVIA VH1 hardware. It is **not** an official YouTube or Sony application.
   more videos per row. Focused video cards, title-bar orbs, settings tiles,
   and the navigation capsule gain animated gradient/noise glass outlines;
   off-focus items do not perform animation work.
+- v15 replaces the faulty floating sidebar capsule with row-owned focus glass,
+  which stays aligned with the text and is never hidden by the headers grid.
+  The navigation rail background now follows the sliding fragment instead of
+  painting its stationary dock. Removing the dock's unnecessary 50 dp trailing
+  padding eliminates the coloured band over the first video column when the
+  sidebar is closed. The top toolbar is slimmer and focused header rows use a
+  small scale response with animated colour/noise that stops when unfocused.
 - GitHub Actions builds both Android TV and tablet-preview variants on pushes
   to `pitube-v10`, and publishes direct APK downloads in a test prerelease.
 
@@ -120,7 +127,7 @@ Local debug APKs use the developer's local debug keystore unless
 `keystore.properties` points to the permanent PiTube signing keystore.
 The universal APK should appear under
 `smarttubetv/build/outputs/apk/stpitube/debug/`, named similarly to
-`PiTube_pitube_32.68-pitube.14_universal.apk`. Keep the debug keystore if you
+`PiTube_pitube_32.68-pitube.15_universal.apk`. Keep the debug keystore if you
 want to update the same installation later. For distribution, use a dedicated
 release signing key.
 
@@ -142,7 +149,7 @@ using OpenJDK 17, Gradle 7.5, and Android SDK 34. The universal APK was
 verified to declare `dev.pradi.pitube`, advertise an Android TV launcher,
 contain ARMv7 and ARM64 libraries, and pass APK signature checks for v1/v2.
 This verifies packaging, not live YouTube playback or appearance on a TV.
-The current version is `32.68-pitube.14`; GitHub builds derive an increasing
+The current version is `32.68-pitube.15`; GitHub builds derive an increasing
 `versionCode` from the workflow run number (starting at 2470). APKs update
 previous PiTube installations only when the signing certificate matches.
 

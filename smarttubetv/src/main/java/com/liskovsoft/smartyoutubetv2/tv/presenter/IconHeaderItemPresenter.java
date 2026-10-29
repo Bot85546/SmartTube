@@ -25,6 +25,7 @@ import com.liskovsoft.sharedutils.mylogger.Log;
 import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 import com.liskovsoft.smartyoutubetv2.tv.ui.main.PiTubeCrashReporter;
+import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.headers.PiTubeGlassFocusDrawable;
 
 public class IconHeaderItemPresenter extends RowHeaderPresenter {
     private static final String TAG = IconHeaderItemPresenter.class.getSimpleName();
@@ -32,6 +33,15 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
     private final int mResId;
     private final String mIconUrl;
     private Drawable mDefaultIcon;
+
+    private static final class GlassHeaderViewHolder extends ViewHolder {
+        final PiTubeGlassFocusDrawable focusGlass;
+
+        GlassHeaderViewHolder(View view, PiTubeGlassFocusDrawable focusGlass) {
+            super(view);
+            this.focusGlass = focusGlass;
+        }
+    }
 
     public IconHeaderItemPresenter(int resId, String iconUrl) {
         mResId = resId;
@@ -45,10 +55,31 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         mDefaultIcon = new ColorDrawable(ContextCompat.getColor(viewGroup.getContext(), R.color.lb_grey));
 
-        View view = inflater.inflate(R.layout.icon_header_item, null);
+        View view = inflater.inflate(R.layout.icon_header_item, viewGroup, false);
         view.setAlpha(mUnselectedAlpha); // Initialize icons to be at half-opacity.
+        // The focus surface is the row's background, not a floating view
+        // behind the opaque headers grid. Text and icons draw over the glass.
+        PiTubeGlassFocusDrawable glass = null;
+        if (!PiTubeCrashReporter.isSafeMode(view.getContext())) {
+            glass = new PiTubeGlassFocusDrawable(
+                    view.getResources().getDisplayMetrics().density);
+            glass.setAlpha(0);
+            view.setBackground(glass);
 
-        return new ViewHolder(view);
+            final PiTubeGlassFocusDrawable focusGlass = glass;
+            view.setOnFocusChangeListener((v, focused) -> {
+                focusGlass.setActive(focused);
+                focusGlass.setAlpha(focused ? 255 : (v.isSelected() ? 220 : 0));
+                v.animate().cancel();
+                // A subtle scale response makes D-pad movement feel immediate
+                // without moving the menu row or clipping its label.
+                v.animate().scaleX(focused ? 1.025f : 1f)
+                        .scaleY(focused ? 1.025f : 1f)
+                        .setDuration(155).start();
+            });
+        }
+
+        return new GlassHeaderViewHolder(view, glass);
     }
 
     @Override
@@ -92,7 +123,24 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
 
     @Override
     public void onUnbindViewHolder(Presenter.ViewHolder viewHolder) {
-        // NOP
+        GlassHeaderViewHolder holder = (GlassHeaderViewHolder) viewHolder;
+        holder.view.animate().cancel();
+        holder.view.setScaleX(1f);
+        holder.view.setScaleY(1f);
+        if (holder.focusGlass != null) {
+            holder.focusGlass.setActive(false);
+            holder.focusGlass.setAlpha(0);
+        }
+    }
+
+    @Override
+    public void onViewDetachedFromWindow(Presenter.ViewHolder viewHolder) {
+        GlassHeaderViewHolder holder = (GlassHeaderViewHolder) viewHolder;
+        holder.view.animate().cancel();
+        if (holder.focusGlass != null) {
+            holder.focusGlass.setActive(false);
+        }
+        super.onViewDetachedFromWindow(viewHolder);
     }
 
     // TODO: This is a temporary fix. Remove me when leanback onCreateViewHolder no longer sets the
@@ -102,9 +150,15 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
         float progress = holder.getSelectLevel();
         holder.view.setAlpha(mUnselectedAlpha + progress *
                 (1.0f - mUnselectedAlpha));
-        // Keep the glyph and label exactly where they are. One independent
-        // highlight travels vertically behind the whole menu instead.
         holder.view.setSelected(progress > 0.5f);
+        if (holder instanceof GlassHeaderViewHolder) {
+            GlassHeaderViewHolder glassHolder = (GlassHeaderViewHolder) holder;
+            if (glassHolder.focusGlass != null) {
+                boolean focused = holder.view.hasFocus();
+                glassHolder.focusGlass.setAlpha(focused ? 255 : Math.round(220f * progress));
+                glassHolder.focusGlass.setActive(focused);
+            }
+        }
     }
 
     private final RequestListener<Drawable> mErrorListener = new RequestListener<Drawable>() {
