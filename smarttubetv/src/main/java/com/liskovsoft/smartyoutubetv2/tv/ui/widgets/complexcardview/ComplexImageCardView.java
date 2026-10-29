@@ -2,11 +2,13 @@ package com.liskovsoft.smartyoutubetv2.tv.ui.widgets.complexcardview;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
+import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.LayerDrawable;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
+import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView.ScaleType;
 import android.widget.TextView;
@@ -14,7 +16,8 @@ import androidx.leanback.widget.ImageCardView;
 
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.Video;
 import com.liskovsoft.smartyoutubetv2.tv.R;
-import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.headers.PiTubeGlassFocusDrawable;
+import com.liskovsoft.smartyoutubetv2.tv.ui.main.PiTubeCrashReporter;
+import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.headers.PiTubeAuroraGlowDrawable;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 public class ComplexImageCardView extends ImageCardView {
@@ -22,9 +25,9 @@ public class ComplexImageCardView extends ImageCardView {
     private Handler mHandler;
     private boolean mIsCardTextAutoScrollEnabled;
     private boolean mIsBadgeEnabled;
-    private PiTubeGlassFocusDrawable mGlassOutline;
-    private ValueAnimator mOutlineAnimator;
-    private int mOutlineAlpha;
+    private PiTubeAuroraGlowDrawable mAuroraGlow;
+    private ValueAnimator mGlowAnimator;
+    private int mGlowAlpha;
 
     public ComplexImageCardView(Context context) {
         super(context);
@@ -47,12 +50,33 @@ public class ComplexImageCardView extends ImageCardView {
     private void init() {
         mComplexImageView = findViewById(R.id.main_image_wrapper);
         mHandler = new Handler(Looper.getMainLooper());
-        mGlassOutline = new PiTubeGlassFocusDrawable(
-                getResources().getDisplayMetrics().density, true);
-        mGlassOutline.setAlpha(0);
-        Drawable previous = getForeground();
-        setForeground(previous == null ? mGlassOutline
-                : new LayerDrawable(new Drawable[] {previous, mGlassOutline}));
+        if (!PiTubeCrashReporter.isSafeMode(getContext())) {
+            mAuroraGlow = new PiTubeAuroraGlowDrawable(
+                    getResources().getDisplayMetrics().density);
+            // Unlike a foreground outline, this halo is drawn *before* the
+            // card; the video and text hide its inside half.
+            mAuroraGlow.setCallback(this);
+            setClipChildren(false);
+            setClipToPadding(false);
+            setClipToOutline(false);
+        }
+    }
+
+    @Override
+    protected boolean verifyDrawable(Drawable who) {
+        return who == mAuroraGlow || super.verifyDrawable(who);
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        if (mAuroraGlow != null) mAuroraGlow.setBounds(0, 0, w, h);
+    }
+
+    @Override
+    public void draw(Canvas canvas) {
+        if (mAuroraGlow != null) mAuroraGlow.draw(canvas);
+        super.draw(canvas);
     }
 
     private void enableTitleAnimation(boolean enable) {
@@ -108,9 +132,7 @@ public class ComplexImageCardView extends ImageCardView {
     public void setSelected(boolean selected) {
         super.setSelected(selected);
 
-        // Border covers both the thumbnail and the title, rather than just
-        // overlaying the image. Animate only the item actually selected.
-        updateGlassOutline(selected);
+        updateAuroraGlow(selected);
 
         if (mIsCardTextAutoScrollEnabled) {
             enableTitleAnimation(selected);
@@ -120,36 +142,36 @@ public class ComplexImageCardView extends ImageCardView {
         enableVideoPreview(selected);
     }
 
-    private void updateGlassOutline(boolean selected) {
-        if (mGlassOutline == null) return;
-        if (mOutlineAnimator != null) mOutlineAnimator.cancel();
-        mGlassOutline.setActive(selected);
+    private void updateAuroraGlow(boolean selected) {
+        if (mAuroraGlow == null) return;
+        if (mGlowAnimator != null) mGlowAnimator.cancel();
+        mAuroraGlow.setActive(selected);
         int target = selected ? 255 : 0;
-        if (!isAttachedToWindow() || mOutlineAlpha == target) {
-            mOutlineAlpha = target;
-            mGlassOutline.setAlpha(target);
+        if (!isAttachedToWindow() || mGlowAlpha == target) {
+            mGlowAlpha = target;
+            mAuroraGlow.setAlpha(target);
             return;
         }
-        mOutlineAnimator = ValueAnimator.ofInt(mOutlineAlpha, target);
-        mOutlineAnimator.setDuration(170);
-        mOutlineAnimator.setInterpolator(new DecelerateInterpolator());
-        mOutlineAnimator.addUpdateListener(animation -> {
-            mOutlineAlpha = (int) animation.getAnimatedValue();
-            mGlassOutline.setAlpha(mOutlineAlpha);
+        mGlowAnimator = ValueAnimator.ofInt(mGlowAlpha, target);
+        mGlowAnimator.setDuration(190);
+        mGlowAnimator.setInterpolator(new DecelerateInterpolator());
+        mGlowAnimator.addUpdateListener(animation -> {
+            mGlowAlpha = (int) animation.getAnimatedValue();
+            mAuroraGlow.setAlpha(mGlowAlpha);
         });
-        mOutlineAnimator.start();
+        mGlowAnimator.start();
     }
 
     @Override
     protected void onDetachedFromWindow() {
-        if (mOutlineAnimator != null) {
-            mOutlineAnimator.cancel();
-            mOutlineAnimator = null;
+        if (mGlowAnimator != null) {
+            mGlowAnimator.cancel();
+            mGlowAnimator = null;
         }
-        if (mGlassOutline != null) {
-            mGlassOutline.setActive(false);
-            mGlassOutline.setAlpha(0);
-            mOutlineAlpha = 0;
+        if (mAuroraGlow != null) {
+            mAuroraGlow.setActive(false);
+            mAuroraGlow.setAlpha(0);
+            mGlowAlpha = 0;
         }
         super.onDetachedFromWindow();
     }
@@ -157,7 +179,18 @@ public class ComplexImageCardView extends ImageCardView {
     @Override
     protected void onAttachedToWindow() {
         super.onAttachedToWindow();
-        if (isSelected()) updateGlassOutline(true);
+        if (mAuroraGlow != null) {
+            // Allow the glow to extend beyond the card, without changing the
+            // size or hit target of the card and without drawing over videos.
+            ViewParent parent = getParent();
+            for (int depth = 0; depth < 3 && parent instanceof ViewGroup; depth++) {
+                ViewGroup group = (ViewGroup) parent;
+                group.setClipChildren(false);
+                group.setClipToPadding(false);
+                parent = group.getParent();
+            }
+        }
+        if (isSelected()) updateAuroraGlow(true);
     }
 
     @Override

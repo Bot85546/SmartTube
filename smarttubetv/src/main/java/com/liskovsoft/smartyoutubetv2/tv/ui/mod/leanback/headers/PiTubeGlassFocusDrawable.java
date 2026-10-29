@@ -9,9 +9,11 @@ import android.graphics.LinearGradient;
 import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
+import android.graphics.RadialGradient;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Shader;
+import android.graphics.SweepGradient;
 import android.graphics.drawable.Drawable;
 import android.os.SystemClock;
 
@@ -21,24 +23,28 @@ import androidx.annotation.Nullable;
 /**
  * Hardware-friendly focus surface for TV remote navigation.
  *
- * A shared deterministic noise tile supplies frosted texture, and gradients
- * provide colour, glass reflection, and a luminous outline. Only the focused
+ * A shared deterministic noise tile supplies frosted texture. Four broad,
+ * independently animated radial colour fields give the glass two-dimensional
+ * depth without harsh bands or a dark end cap. Only the focused
  * item animates, at a modest frame rate; no live blur or image allocations
  * happen in the drawing loop.
  */
 public final class PiTubeGlassFocusDrawable extends Drawable {
     private static final int NOISE_SIZE = 40;
     private static final long FRAME_INTERVAL_MS = 50L;
+    private static final int CLOUD_COUNT = 4;
     private static Bitmap sNoiseTile;
 
     private final RectF mRect = new RectF();
     private final Paint mBase = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint mColour = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint[] mClouds = new Paint[CLOUD_COUNT];
+    private final Shader[] mCloudShaders = new Shader[CLOUD_COUNT];
+    private final Matrix[] mCloudMatrices = new Matrix[CLOUD_COUNT];
     private final Paint mReflection = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mNoise = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private final Paint mEdgeGlow = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint mEdge = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Matrix mColourMatrix = new Matrix();
+    private final Matrix mEdgeMatrix = new Matrix();
     private final Matrix mNoiseMatrix = new Matrix();
     private final boolean mOutlineOnly;
     private final boolean mCircular;
@@ -46,7 +52,6 @@ public final class PiTubeGlassFocusDrawable extends Drawable {
     private final float mDensity;
     private final float mRadius;
     private final float mInset;
-    private Shader mColourShader;
     private Shader mEdgeGlowShader;
     private Shader mEdgeShader;
     private Shader mNoiseShader;
@@ -82,6 +87,10 @@ public final class PiTubeGlassFocusDrawable extends Drawable {
         mRadius = (outlineOnly ? 20f : 18f) * density;
         mInset = (outlineOnly ? 3f : 1.5f) * density;
         mBase.setColor(Color.argb(205, 17, 28, 48));
+        for (int i = 0; i < CLOUD_COUNT; i++) {
+            mClouds[i] = new Paint(Paint.ANTI_ALIAS_FLAG);
+            mCloudMatrices[i] = new Matrix();
+        }
         mEdge.setStyle(Paint.Style.STROKE);
         mEdge.setStrokeWidth((outlineOnly ? 2f : 1.2f) * density);
         mEdgeGlow.setStyle(Paint.Style.STROKE);
@@ -150,12 +159,20 @@ public final class PiTubeGlassFocusDrawable extends Drawable {
     }
 
     private void moveShaders() {
-        float offset = (float) Math.sin(mPhase * Math.PI * 2f)
-                * mRect.width() * 0.18f;
-        mColourMatrix.setTranslate(offset, 0f);
-        if (mColourShader != null) mColourShader.setLocalMatrix(mColourMatrix);
-        if (mEdgeGlowShader != null) mEdgeGlowShader.setLocalMatrix(mColourMatrix);
-        if (mEdgeShader != null) mEdgeShader.setLocalMatrix(mColourMatrix);
+        for (int i = 0; i < CLOUD_COUNT; i++) {
+            float angle = (float) (2 * Math.PI * (mPhase + i * 0.22f));
+            // Different X/Y oscillations make the colour drift in two axes,
+            // not sweep horizontally as one compressed rainbow band.
+            mCloudMatrices[i].setTranslate(
+                    (float) Math.sin(angle) * mRect.width() * 0.085f,
+                    (float) Math.cos(angle * 0.8f) * mRect.height() * 0.34f);
+            if (mCloudShaders[i] != null) {
+                mCloudShaders[i].setLocalMatrix(mCloudMatrices[i]);
+            }
+        }
+        mEdgeMatrix.setRotate(mPhase * 360f, mRect.centerX(), mRect.centerY());
+        if (mEdgeGlowShader != null) mEdgeGlowShader.setLocalMatrix(mEdgeMatrix);
+        if (mEdgeShader != null) mEdgeShader.setLocalMatrix(mEdgeMatrix);
         mNoiseMatrix.setTranslate(mPhase * 62f * mDensity,
                 mPhase * 28f * mDensity);
         if (mNoiseShader != null) mNoiseShader.setLocalMatrix(mNoiseMatrix);
@@ -171,26 +188,40 @@ public final class PiTubeGlassFocusDrawable extends Drawable {
         float width = mRect.width();
         float height = mRect.height();
 
-        // Cyan, indigo, violet and rose, restrained for readable white text.
-        mColourShader = new LinearGradient(left, top, left + width, top,
-                new int[] {0xA039BBD9, 0xA85C86F6, 0xAA9A7BFA,
-                        0x91D572CF, 0x8842BFD5},
-                new float[] {0f, 0.22f, 0.51f, 0.77f, 1f},
-                Shader.TileMode.CLAMP);
-        mColour.setShader(mColourShader);
+        // Each colour occupies a broad overlapping ellipse instead of a
+        // narrow section of a left-to-right linear gradient.
+        final float[][] positions = {
+                {0.12f, 0.03f, 0.86f},  // aqua, upper left
+                {0.34f, 1.10f, 0.95f},  // cobalt, lower half
+                {0.70f, 0.62f, 0.87f},  // lavender, middle right
+                {1.02f, -0.22f, 0.89f}  // rose and cyan blend at right
+        };
+        final int[][] colours = {
+                {0xAA45B5CD, 0x6E469CCC, 0x00469CCC},
+                {0x8E5688D6, 0x655F8BD8, 0x005F8BD8},
+                {0x907D78DC, 0x617E86DE, 0x007E86DE},
+                {0x90C788B9, 0x5B86AADD, 0x0086AADD}
+        };
+        for (int i = 0; i < CLOUD_COUNT; i++) {
+            float[] p = positions[i];
+            mCloudShaders[i] = new RadialGradient(
+                    left + width * p[0], top + height * p[1],
+                    Math.max(width * p[2], 1f),
+                    colours[i], new float[] {0f, 0.46f, 1f},
+                    Shader.TileMode.CLAMP);
+            mClouds[i].setShader(mCloudShaders[i]);
+        }
         mReflection.setShader(new LinearGradient(left, top, left, top + height,
                 new int[] {0x58FFFFFF, 0x1DFFFFFF, 0x00FFFFFF, 0x0DFFFFFF},
                 new float[] {0f, 0.24f, 0.55f, 1f},
                 Shader.TileMode.CLAMP));
-        mEdgeGlowShader = new LinearGradient(left, top,
-                left + width, top,
-                new int[] {0x6540D9FF, 0x4A768AFE, 0x5EDC8AF5, 0x4F81DDFC},
-                null, Shader.TileMode.CLAMP);
+        mEdgeGlowShader = new SweepGradient(mRect.centerX(), mRect.centerY(),
+                new int[] {0x4446D8FA, 0x547A96FF, 0x57CB9DE5,
+                        0x4C97C8F4, 0x4446D8FA}, null);
         mEdgeGlow.setShader(mEdgeGlowShader);
-        mEdgeShader = new LinearGradient(left, top, left + width, top,
-                new int[] {0xD5E6FAFF, 0xBD9CEBFE, 0xBFC4B5FF,
-                        0xD3FFD0F1, 0xD2DCF8FF},
-                null, Shader.TileMode.CLAMP);
+        mEdgeShader = new SweepGradient(mRect.centerX(), mRect.centerY(),
+                new int[] {0xB0D3F7FF, 0xAFB9C9FF, 0xADB9AFF3,
+                        0xB0F4CCE6, 0xB0D3F7FF}, null);
         mEdge.setShader(mEdgeShader);
         moveShaders();
     }
@@ -200,7 +231,9 @@ public final class PiTubeGlassFocusDrawable extends Drawable {
         float radius = mCircular ? Math.min(mRect.width(), mRect.height()) / 2f : mRadius;
         if (!mOutlineOnly) {
             canvas.drawRoundRect(mRect, radius, radius, mBase);
-            canvas.drawRoundRect(mRect, radius, radius, mColour);
+            for (Paint cloud : mClouds) {
+                canvas.drawRoundRect(mRect, radius, radius, cloud);
+            }
             canvas.drawRoundRect(mRect, radius, radius, mReflection);
             canvas.drawRoundRect(mRect, radius, radius, mNoise);
         }
@@ -212,7 +245,7 @@ public final class PiTubeGlassFocusDrawable extends Drawable {
     @Override
     public void setAlpha(int alpha) {
         mBase.setAlpha(alpha);
-        mColour.setAlpha(alpha);
+        for (Paint cloud : mClouds) cloud.setAlpha(alpha);
         mReflection.setAlpha(alpha);
         mNoise.setAlpha(alpha);
         mEdgeGlow.setAlpha(alpha);
@@ -223,7 +256,7 @@ public final class PiTubeGlassFocusDrawable extends Drawable {
     @Override
     public void setColorFilter(@Nullable ColorFilter colorFilter) {
         mBase.setColorFilter(colorFilter);
-        mColour.setColorFilter(colorFilter);
+        for (Paint cloud : mClouds) cloud.setColorFilter(colorFilter);
         mReflection.setColorFilter(colorFilter);
         mNoise.setColorFilter(colorFilter);
         mEdgeGlow.setColorFilter(colorFilter);

@@ -1,18 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A static glass-tinted navigation rail: no live blur or GPU shaders. -->
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item>
-        <shape android:shape="rectangle">
-            <gradient
-                android:angle="0"
-                android:startColor="#182238"
-                android:centerColor="#111B2D"
-                android:endColor="#0B111E" />
-        </shape>
-    </item>
-    <item android:gravity="right" android:width="1dp">
-        <shape android:shape="rectangle">
-            <solid android:color="#455D81" />
-        </shape>
-    </item>
-</layer-list>
+<!-- Consistent navigation rail: no horizontal darkening or edge stripe. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#111B2C" />
+</shape>

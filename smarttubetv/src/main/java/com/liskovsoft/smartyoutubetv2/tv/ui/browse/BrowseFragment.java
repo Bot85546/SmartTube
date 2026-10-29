@@ -134,7 +134,12 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
                 headersRoot.setBackgroundResource(R.drawable.pitube_sidebar_panel);
                 if (headersRoot instanceof ViewGroup) {
                     ((ViewGroup) headersRoot).setClipChildren(false);
+                    ((ViewGroup) headersRoot).setClipToPadding(false);
                 }
+                // Leanback's old trailing fade is unnecessary on an opaque,
+                // uniformly coloured rail and can read as a vertical seam.
+                View fadingEdge = headersRoot.findViewById(R.id.fade_out_edge);
+                if (fadingEdge != null) fadingEdge.setVisibility(View.GONE);
             }
             // The header rows own their glass backgrounds; do not draw a
             // separate capsule beneath Leanback's scrolling grid.

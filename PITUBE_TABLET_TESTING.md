@@ -48,7 +48,11 @@ to the TV's 1920 x 1080 logical proportions. Nothing is stretched.
 
 ## If PiTube crashes on startup
 
-PiTube v15 removes the old floating sidebar highlight entirely, including the
+PiTube v16 retains the v15 row-owned sidebar highlight and removes the old
+inset video-card border. The sidebar glass uses multiple drifting colour
+fields, while a diffuse halo appears outside the focused video card. Check
+the right edge of the selected sidebar item for dark wedges or clipping.
+PiTube v15 had removed the floating sidebar highlight entirely, including the
 view-coordinate code associated with the earlier `IllegalArgumentException:
 parameter must be a descendant of this view` startup crash.
 The crash reporter remains enabled in case another issue is found.
