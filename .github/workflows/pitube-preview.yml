@@ -36,22 +36,31 @@ jobs:
           # Use the action's downloaded Gradle distribution, never those jars.
           validate-wrappers: false
 
-      - name: Use repository test signing key when configured
+      - name: Require permanent PiTube signing key
         env:
-          KEYSTORE_B64: ${{ secrets.PITUBE_KEYSTORE_B64 }}
-          STORE_PASSWORD: ${{ secrets.PITUBE_STORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.PITUBE_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.PITUBE_KEY_PASSWORD }}
+          SIGNING_BUNDLE: ${{ secrets.PITUBE_SIGNING_BUNDLE_B64 }}
+        shell: bash
         run: |
-          if [[ -n "$KEYSTORE_B64" ]]; then
-            printf '%s' "$KEYSTORE_B64" | base64 --decode > pitube-test-key.jks
-            {
-              printf 'storeFile=%s/pitube-test-key.jks\n' "$GITHUB_WORKSPACE"
-              printf 'storePassword=%s\n' "$STORE_PASSWORD"
-              printf 'keyAlias=%s\n' "$KEY_ALIAS"
-              printf 'keyPassword=%s\n' "$KEY_PASSWORD"
-            } > keystore.properties
+          set -euo pipefail
+          if [[ -z "$SIGNING_BUNDLE" ]]; then
+            echo '::error::Permanent signing is not configured. Add the PITUBE_SIGNING_BUNDLE_B64 repository secret before building; disposable debug keys cannot update installed apps.'
+            exit 1
           fi
+          signing_dir="$RUNNER_TEMP/pitube-signing"
+          mkdir -p "$signing_dir"
+          printf '%s' "$SIGNING_BUNDLE" | base64 --decode | tar -xz -C "$signing_dir"
+          test -s "$signing_dir/pitube.jks"
+          test -s "$signing_dir/keystore.properties"
+          cp "$signing_dir/keystore.properties" keystore.properties
+          printf '\nstoreFile=%s/pitube.jks\n' "$signing_dir" >> keystore.properties
+          chmod 600 keystore.properties "$signing_dir/pitube.jks"
+
+      - name: Confirm signing identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The APK certificate must match the previous installed build for updates.
+          echo 'Permanent signing material loaded for both PiTube variants.'
 
       - name: Build PiTube TV and tablet preview
         run: |
@@ -65,6 +74,16 @@ jobs:
           tablet=(smarttubetv/build/outputs/apk/stpitubetablet/debug/*_universal.apk)
           test -s "${tv[0]}"
           test -s "${tablet[0]}"
+          apksigner_path="$(find "${ANDROID_HOME}/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          test -x "$apksigner_path"
+          tv_cert="$($apksigner_path verify --print-certs "${tv[0]}" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -n 1)"
+          tablet_cert="$($apksigner_path verify --print-certs "${tablet[0]}" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | head -n 1)"
+          test -n "$tv_cert"
+          if [[ "$tv_cert" != "$tablet_cert" ]]; then
+            echo '::error::TV and tablet APKs have different signing certificates.'
+            exit 1
+          fi
+          echo "Both APKs use signing certificate SHA-256: $tv_cert"
           sha256sum "${tv[0]}" "${tablet[0]}" > PiTube-SHA256SUMS.txt
           cat PiTube-SHA256SUMS.txt
 
@@ -91,6 +110,6 @@ jobs:
             "${tv[0]}" "${tablet[0]}" PiTube-SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title "PiTube v12 test build ${GITHUB_RUN_NUMBER}" \
-            --notes 'Experimental Android TV and Galaxy Tab S11 Ultra APKs. If this CI build uses a different test signing key from your installed PiTube, Android will require uninstalling the old test build first (which clears app data). Use the tablet flavor for the S11 Ultra and the TV flavor for BRAVIA.' \
+            --title "PiTube v13 test build ${GITHUB_RUN_NUMBER}" \
+            --notes 'Permanently signed PiTube TV and Galaxy Tab S11 Ultra test APKs. Once an installation uses this signing certificate, all subsequent PiTube builds can update it in place. Older preview APKs may use incompatible disposable debug certificates and require a one-time migration. Keep a private backup of the signing bundle.' \
             --prerelease

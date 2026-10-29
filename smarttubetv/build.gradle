@@ -57,8 +57,10 @@ android {
         applicationId "app.smarttube"
         minSdkVersion project.properties.minSdkVersion
         targetSdkVersion project.properties.targetSdkVersion
-        versionCode 2469
-        versionName "32.68-pitube.12"
+        // A unique increasing versionCode is required for seamless Android updates.
+        // CI run numbers persist between builds on this repository.
+        versionCode 2470 + (System.getenv('GITHUB_RUN_NUMBER') ?: '0').toInteger()
+        versionName "32.68-pitube.13"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField "long", "TIMESTAMP", System.currentTimeMillis() + "L"
 

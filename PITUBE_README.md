@@ -116,17 +116,25 @@ bash gradlew :smarttubetv:assembleStpitubetabletDebug
 See `PITUBE_TABLET_TESTING.md` for tablet setup and the limits of screen/input
 equivalence with a physical Sony TV.
 
-The debug APK is signed using the developer's local debug keystore.
+Local debug APKs use the developer's local debug keystore unless
+`keystore.properties` points to the permanent PiTube signing keystore.
 The universal APK should appear under
 `smarttubetv/build/outputs/apk/stpitube/debug/`, named similarly to
-`PiTube_pitube_32.68-pitube.12_universal.apk`. Keep the debug keystore if you
+`PiTube_pitube_32.68-pitube.13_universal.apk`. Keep the debug keystore if you
 want to update the same installation later. For distribution, use a dedicated
 release signing key.
 
-Automated GitHub builds use a temporary Android debug key unless the owner
-sets `PITUBE_KEYSTORE_B64` plus the matching `PITUBE_STORE_PASSWORD`,
-`PITUBE_KEY_ALIAS`, and `PITUBE_KEY_PASSWORD` repository secrets. Android
-rejects an APK signed with a different key over an existing installation.
+Automated GitHub builds **require** a permanent private signing bundle stored
+as the `PITUBE_SIGNING_BUNDLE_B64` Actions repository secret. The bundle is a
+base64-encoded `.tar.gz` containing `pitube.jks` and `keystore.properties`
+(`storePassword`, `keyAlias`, `keyPassword`; the workflow supplies `storeFile`).
+The workflow fails before compilation when this secret is not configured:
+it will never silently fall back to a different, disposable debug certificate.
+Keep a secure offline backup of the bundle, and do not commit it to Git.
+Android rejects an APK signed with a different key over an existing
+installation. Updating an already-installed old preview with a different
+certificate requires a one-time migration (with potential app-data loss).
+All releases made with the new permanent bundle can update each other in place.
 
 ## Build verification
 
@@ -135,9 +143,9 @@ using OpenJDK 17, Gradle 7.5, and Android SDK 34. The universal APK was
 verified to declare `dev.pradi.pitube`, advertise an Android TV launcher,
 contain ARMv7 and ARM64 libraries, and pass APK signature checks for v1/v2.
 This verifies packaging, not live YouTube playback or appearance on a TV.
-The current version is `32.68-pitube.12` (`versionCode` 2469). Locally signed
-APKs update previous PiTube installations only when the signing certificate
-matches. GitHub Actions uses its own debug key unless signing secrets are set.
+The current version is `32.68-pitube.13`; GitHub builds derive an increasing
+`versionCode` from the workflow run number (starting at 2470). APKs update
+previous PiTube installations only when the signing certificate matches.
 
 ## Installation
 
