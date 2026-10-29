@@ -47,13 +47,4 @@
             android:max="100"
             android:progress="45"/>
     </LinearLayout>
-    <!-- Lightweight tvOS-inspired focus stroke over the poster; fades in on D-pad focus. -->
-    <View
-        android:id="@+id/pitube_focus_ring"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:alpha="0"
-        android:background="@drawable/pitube_focus_ring"
-        android:clickable="false"
-        android:focusable="false" />
 </merge>

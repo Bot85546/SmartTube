@@ -24,8 +24,8 @@ import androidx.annotation.Nullable;
  */
 public final class PiTubeAuroraGlowDrawable extends Drawable {
     private static final long FRAME_INTERVAL_MS = 50L;
-    private static final int GLOW_LAYERS = 20;
-    private static final float GLOW_SPREAD_DP = 11f;
+    private static final int GLOW_LAYERS = 16;
+    private static final float GLOW_SPREAD_DP = 7.5f;
     private static final float CORNER_RADIUS_DP = 22f;
     private static final float STROKE_WIDTH_DP = 1.5f;
 
@@ -124,7 +124,7 @@ public final class PiTubeAuroraGlowDrawable extends Drawable {
             // Fade continuously, from subtle illumination at the card to
             // fully transparent at the outer edge. No visible contour.
             float falloff = 1f - distance;
-            int alpha = Math.round(43f * falloff * falloff * mAlpha / 255f);
+            int alpha = Math.round(29f * falloff * falloff * mAlpha / 255f);
             if (alpha == 0) continue;
 
             float expand = spread * distance;

@@ -11,7 +11,6 @@ import android.widget.ImageView.ScaleType;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import android.view.animation.DecelerateInterpolator;
 
 import com.bumptech.glide.Glide;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.Video;
@@ -24,8 +23,6 @@ import java.lang.ref.WeakReference;
 
 public class ComplexImageView extends RelativeLayout {
     private static final long PLAYER_START_DELAY_MS = 2_000;
-    private static final long FOCUS_FADE_DURATION_MS = 170;
-    private static final DecelerateInterpolator FOCUS_EASING = new DecelerateInterpolator();
     private ImageView mMainImage;
     private ImageView mPreviewImage;
     private EmbedPlayerView mPreviewPlayer;
@@ -33,7 +30,6 @@ public class ComplexImageView extends RelativeLayout {
     private ProgressBar mProgressBar;
     private TextView mBadgeText;
     private ViewGroup mProgressContainer;
-    private View mFocusRing;
     private int mPreviewWidth;
     private int mPreviewHeight;
     private Runnable mCreateAndStartPlayer;
@@ -63,25 +59,6 @@ public class ComplexImageView extends RelativeLayout {
         mProgressBar = findViewById(R.id.clip_progress);
         mProgressContainer = findViewById(R.id.clip_info);
         mPreviewContainer = findViewById(R.id.preview_container);
-        mFocusRing = findViewById(R.id.pitube_focus_ring);
-    }
-
-    /** Only animate opacity. Scaling is handled by Leanback's native focus highlighter. */
-    public void setFocusHighlighted(boolean focused) {
-        if (mFocusRing == null) {
-            return;
-        }
-
-        mFocusRing.animate().cancel();
-        if (!isAttachedToWindow()) {
-            mFocusRing.setAlpha(focused ? 1f : 0f);
-            return;
-        }
-        mFocusRing.animate()
-                .alpha(focused ? 1f : 0f)
-                .setDuration(FOCUS_FADE_DURATION_MS)
-                .setInterpolator(FOCUS_EASING)
-                .start();
     }
 
     /**
@@ -107,10 +84,6 @@ public class ComplexImageView extends RelativeLayout {
 
     @Override
     protected void onDetachedFromWindow() {
-        if (mFocusRing != null) {
-            mFocusRing.animate().cancel();
-            mFocusRing.setAlpha(0f);
-        }
         super.onDetachedFromWindow();
 
         stopPlayback();

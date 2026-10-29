@@ -5,12 +5,15 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.content.Context;
 import android.graphics.Matrix;
+import android.graphics.Outline;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
 import android.view.View;
+import android.view.ViewOutlineProvider;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.view.ViewTreeObserver;
@@ -64,6 +67,20 @@ public class ComplexImageCardView extends ImageCardView {
     private void init() {
         mComplexImageView = findViewById(R.id.main_image_wrapper);
         mHandler = new Handler(Looper.getMainLooper());
+        // Leanback may disable its wrapper outline clipping on older TVs.
+        // Clip the entire thumbnail + information panel to ONE rounded shape
+        // so all cards have the same continuous silhouette, selected or not.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            setOutlineProvider(new ViewOutlineProvider() {
+                @Override
+                public void getOutline(View view, Outline outline) {
+                    int radius = getResources().getDimensionPixelSize(
+                            R.dimen.lb_rounded_rect_corner_radius);
+                    outline.setRoundRect(0, 0, view.getWidth(), view.getHeight(), radius);
+                }
+            });
+            setClipToOutline(true);
+        }
         if (!PiTubeCrashReporter.isSafeMode(getContext())) {
             mAuroraGlow = new PiTubeAuroraGlowDrawable(
                     getResources().getDisplayMetrics().density);

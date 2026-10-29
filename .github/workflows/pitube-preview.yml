@@ -121,11 +121,11 @@ jobs:
           tablet=(smarttubetv/build/outputs/apk/stpitubetablet/debug/*_universal.apk)
           if [[ "$PITUBE_UPDATABLE" == "true" ]]; then
             tag="pitube-update-${GITHUB_RUN_NUMBER}"
-            title="PiTube v18 updateable build ${GITHUB_RUN_NUMBER}"
+            title="PiTube updateable build ${GITHUB_RUN_NUMBER}"
             notes="Permanently signed TV package: dev.pradi.pitube; tablet package: dev.pradi.pitube.preview. Newer PiTube releases signed with the same key and using the same package IDs install as updates without uninstalling this app. The first permanent build must be installed once; numbered test builds are independent apps."
           else
             tag="pitube-test-${GITHUB_RUN_NUMBER}"
-            title="PiTube v18 isolated test build ${GITHUB_RUN_NUMBER}"
+            title="PiTube isolated test build ${GITHUB_RUN_NUMBER}"
             notes="Permanent signing is not configured. TV package: dev.pradi.pitube.test${GITHUB_RUN_NUMBER}; tablet package: dev.pradi.pitube.preview.test${GITHUB_RUN_NUMBER}. These are isolated test apps and will NOT update one another. Add the PITUBE_SIGNING_BUNDLE_B64 Actions secret to switch this workflow to permanent app IDs and updateable signing."
           fi
           gh release create "$tag" \
