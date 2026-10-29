@@ -73,12 +73,12 @@ public class MainUIData extends DataChangeBase implements ProfileChangeListener 
     public static final int TOP_BUTTON_SEARCH = 1 << 2;
     public static final int TOP_BUTTON_DEFAULT = TOP_BUTTON_SEARCH | TOP_BUTTON_BROWSE_ACCOUNTS;
     public static final long UI_TWEAK_ROUNDED_CORNERS = 1;
-    public static final long MENU_ITEM_DEFAULT = MENU_ITEM_PIN_TO_SIDEBAR | MENU_ITEM_NOT_INTERESTED | MENU_ITEM_NOT_RECOMMEND_CHANNEL
-            | MENU_ITEM_REMOVE_FROM_HISTORY | MENU_ITEM_BLOCK_CHANNEL | MENU_ITEM_MOVE_SECTION_UP | MENU_ITEM_MOVE_SECTION_DOWN
-            | MENU_ITEM_RENAME_SECTION | MENU_ITEM_SAVE_REMOVE_PLAYLIST | MENU_ITEM_ADD_TO_PLAYLIST | MENU_ITEM_CREATE_PLAYLIST
-            | MENU_ITEM_RENAME_PLAYLIST | MENU_ITEM_ADD_TO_NEW_PLAYLIST | MENU_ITEM_STREAM_REMINDER | MENU_ITEM_PLAYLIST_ORDER
-            | MENU_ITEM_OPEN_CHANNEL | MENU_ITEM_REMOVE_FROM_SUBSCRIPTIONS | MENU_ITEM_PLAY_NEXT | MENU_ITEM_OPEN_PLAYLIST
-            | MENU_ITEM_SUBSCRIBE | MENU_ITEM_CLEAR_HISTORY;
+    // PiTube: focus the default context menu on actions people actually use.
+    // Every other upstream action remains available from interface settings.
+    public static final long MENU_ITEM_DEFAULT = MENU_ITEM_PIN_TO_SIDEBAR | MENU_ITEM_ADD_TO_WATCH_LATER
+            | MENU_ITEM_ADD_TO_PLAYLIST | MENU_ITEM_PLAY_NEXT | MENU_ITEM_OPEN_CHANNEL
+            | MENU_ITEM_OPEN_PLAYLIST | MENU_ITEM_SUBSCRIBE | MENU_ITEM_NOT_INTERESTED
+            | MENU_ITEM_MOVE_SECTION_UP | MENU_ITEM_MOVE_SECTION_DOWN;
     private static final Long[] MENU_ITEM_DEFAULT_ORDER = {
             MENU_ITEM_EXIT_FROM_PIP, MENU_ITEM_PLAY_VIDEO, MENU_ITEM_PLAY_VIDEO_INCOGNITO, MENU_ITEM_PLAY_FROM_START, MENU_ITEM_REMOVE_FROM_HISTORY,
             MENU_ITEM_STREAM_REMINDER, MENU_ITEM_RECENT_PLAYLIST, MENU_ITEM_ADD_TO_WATCH_LATER, MENU_ITEM_ADD_TO_PLAYLIST, MENU_ITEM_CREATE_PLAYLIST,
@@ -421,6 +421,12 @@ public class MainUIData extends DataChangeBase implements ProfileChangeListener 
                 "App.Theme.Leanback.Blue.OLED.Browse",
                 "App.Theme.Leanback.Blue.Preferences",
                 mContext));
+        mColorSchemes.add(new ColorScheme(
+                R.string.color_scheme_pradi,
+                "App.Theme.Pradi.Player",
+                "App.Theme.Pradi.Browse",
+                "App.Theme.Pradi.Preferences",
+                mContext));
     }
 
     private void restoreState() {
@@ -431,12 +437,12 @@ public class MainUIData extends DataChangeBase implements ProfileChangeListener 
         //mIsCardAnimatedPreviewsEnabled = Helpers.parseBoolean(split, 0, true);
         mVideoGridScale = Helpers.parseFloat(split, 1, 1.0f); // 4 cards in a row
         mUIScale = Helpers.parseFloat(split, 2, 1.0f);
-        mColorSchemeIndex = Helpers.parseInt(split, 3, 1);
+        mColorSchemeIndex = Helpers.parseInt(split, 3, 8); // Aurora first-run default
         mIsCardMultilineTitleEnabled = Helpers.parseBoolean(split, 4, true);
         mChannelCategorySorting = Helpers.parseInt(split, 5, CHANNEL_SORTING_LAST_VIEWED);
         mPlaylistsStyle = Helpers.parseInt(split, 6, PLAYLISTS_STYLE_GRID);
         mCardTitleLinesNum = Helpers.parseInt(split, 7, 1);
-        mIsCardTextAutoScrollEnabled = Helpers.parseBoolean(split, 8, true);
+        mIsCardTextAutoScrollEnabled = Helpers.parseBoolean(split, 8, false);
         mIsUploadsOldLookEnabled = Helpers.parseBoolean(split, 9, false);
         mIsUploadsAutoLoadEnabled = Helpers.parseBoolean(split, 10, true);
         mCardTextScrollSpeed = Helpers.parseFloat(split, 11, 2);

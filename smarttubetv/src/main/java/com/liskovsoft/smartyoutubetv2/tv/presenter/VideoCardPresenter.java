@@ -3,6 +3,7 @@ package com.liskovsoft.smartyoutubetv2.tv.presenter;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Build.VERSION;
 import android.util.Pair;
@@ -94,7 +95,11 @@ public class VideoCardPresenter extends LongClickPresenter {
 
     private void updateCardBackgroundColor(ComplexImageCardView view, boolean selected) {
         int backgroundColor = selected ? mSelectedBackgroundColor : mDefaultBackgroundColor;
-        int textColor = selected ? mSelectedTextColor : mDefaultTextColor;
+        // Preserve readable dark text in optional legacy themes with bright focus cards.
+        boolean brightFocusCard = selected &&
+                (Color.red(backgroundColor) * 299 + Color.green(backgroundColor) * 587
+                        + Color.blue(backgroundColor) * 114) / 1000 > 160;
+        int textColor = brightFocusCard ? mSelectedTextColor : mDefaultTextColor;
 
         // Both background colors should be set because the view's
         // background is temporarily visible during animations.
@@ -112,7 +117,8 @@ public class VideoCardPresenter extends LongClickPresenter {
         }
         TextView contentText = view.findViewById(R.id.content_text);
         if (contentText != null) {
-            contentText.setTextColor(textColor);
+            contentText.setTextColor(brightFocusCard ? mSelectedTextColor :
+                    ContextCompat.getColor(view.getContext(), R.color.pitube_text_muted));
         }
     }
 

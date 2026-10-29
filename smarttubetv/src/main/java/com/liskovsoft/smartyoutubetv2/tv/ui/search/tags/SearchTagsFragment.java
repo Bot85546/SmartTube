@@ -26,6 +26,7 @@ import com.liskovsoft.smartyoutubetv2.tv.presenter.ShortsCardPresenter;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.VideoCardPresenter;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.base.OnItemLongPressedListener;
 import com.liskovsoft.smartyoutubetv2.tv.ui.common.LeanbackActivity;
+import com.liskovsoft.smartyoutubetv2.tv.ui.browse.BrowseActivity;
 import com.liskovsoft.smartyoutubetv2.tv.ui.search.tags.vineyard.SearchTagsFragmentBase;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
@@ -433,7 +434,9 @@ public class SearchTagsFragment extends SearchTagsFragmentBase {
     public void finishReally() {
         LeanbackActivity activity = (LeanbackActivity) getActivity();
 
-        if (activity != null) {
+        if (activity instanceof BrowseActivity) {
+            ((BrowseActivity) activity).closeInlineSearch();
+        } else if (activity != null) {
             activity.finishReally();
         }
     }

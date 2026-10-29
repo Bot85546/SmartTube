@@ -1,5 +1,6 @@
 package com.liskovsoft.smartyoutubetv2.tv.ui.main;
 
+import android.content.Context;
 import android.os.Build.VERSION;
 
 import androidx.annotation.NonNull;
@@ -42,6 +43,15 @@ import java.security.Provider;
 import java.security.Security;
 
 public class MainApplication extends MultiDexApplication implements Configuration.Provider { // fix: Didn't find class "com.google.firebase.provider.FirebaseInitProvider"
+    private boolean mPiTubeInitialized;
+
+    @Override
+    protected void attachBaseContext(Context base) {
+        super.attachBaseContext(base);
+        // Install before app initialization; a failure in onCreate must be saved too.
+        PiTubeCrashReporter.install(this);
+    }
+
     static {
         // fix YouTube bandwidth throttling (best - false)???
         // false is better for streams (less buffering)
@@ -57,6 +67,18 @@ public class MainApplication extends MultiDexApplication implements Configuratio
     @Override
     public void onCreate() {
         super.onCreate();
+
+        if (!PiTubeCrashReporter.shouldShowRecovery(this)) {
+            ensurePiTubeInitialized();
+        }
+    }
+
+    /** The recovery screen can initialize the normal app without restarting Android. */
+    public synchronized void ensurePiTubeInitialized() {
+        if (mPiTubeInitialized) {
+            return;
+        }
+        PiTubeCrashReporter.note("Initializing application services");
 
         // ByeByeDPI fix
         // https://android-review.googlesource.com/c/platform/external/conscrypt/+/89408/
@@ -85,6 +107,8 @@ public class MainApplication extends MultiDexApplication implements Configuratio
 
         setupGlobalExceptionHandler();
         setupViewManager();
+        mPiTubeInitialized = true;
+        PiTubeCrashReporter.note("Application services ready");
     }
 
     /**

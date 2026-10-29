@@ -4,9 +4,12 @@ import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Build;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import androidx.core.content.ContextCompat;
+import androidx.leanback.widget.SearchOrbView;
 import androidx.leanback.app.RowsSupportFragment;
 import androidx.leanback.widget.ArrayObjectAdapter;
 import androidx.leanback.widget.HeaderItem;
@@ -73,6 +76,26 @@ public abstract class SearchTagsFragmentBase extends SearchSupportFragment
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View root = super.onCreateView(inflater, container, savedInstanceState);
+
+        // Samsung's external-keyboard focus highlight is rectangular even on
+        // round Leanback buttons. Use PiTube's circular treatment, and keep
+        // the search text field free of the system-wide gray focus rectangle.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            View editor = root.findViewById(R.id.lb_search_text_editor);
+            if (editor != null) {
+                editor.setDefaultFocusHighlightEnabled(false);
+            }
+            for (int id : new int[] { R.id.lb_search_bar_speech_orb,
+                    R.id.search_settings_orb, R.id.lb_search_bar_search_orb }) {
+                View target = root.findViewById(id);
+                if (target == null) continue;
+                target.setDefaultFocusHighlightEnabled(false);
+                if (target instanceof SearchOrbView) {
+                    target.setForeground(ContextCompat.getDrawable(
+                            requireContext(), R.drawable.pitube_orb_glass_focus));
+                }
+            }
+        }
 
         mProgressBarManager.setRootView((ViewGroup) root);
 

@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Color;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.util.AttributeSet;
 import android.view.View;
 import android.widget.TextView;
@@ -193,6 +194,8 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
         MainUIData mainUIData = MainUIData.instance(getContext());
 
         mSearchOrbView = findViewById(R.id.title_orb);
+        mSearchOrbView.setOrbIcon(ContextCompat.getDrawable(
+                getContext(), R.drawable.pitube_search_icon));
 
         mAccountView = findViewById(R.id.account_orb);
         mAccountView.setOnOrbClickedListener(v -> AccountSelectionPresenter.instance(getContext()).nextAccountOrDialog());
@@ -200,13 +203,26 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
             AccountSettingsPresenter.instance(getContext()).show();
             return true;
         });
-        TooltipCompatHandler.setTooltipText(mAccountView, getContext().getString(R.string.settings_accounts));
+        // Profile selection is self-explanatory. Do not show a stale "None"
+        // tooltip when moving between the round title-bar buttons.
+        TooltipCompatHandler.setTooltipText(mAccountView, null);
 
         mLanguageView = findViewById(R.id.language_orb);
         mLanguageView.setOnOrbClickedListener(v -> LanguageSettingsPresenter.instance(getContext()).show());
         TooltipCompatHandler.setTooltipText(mLanguageView, getContext().getString(R.string.settings_language_country));
 
         mExitPip = findViewById(R.id.exit_pip);
+        // Android 8+ may draw a square keyboard-focus overlay on these round
+        // Leanback orbs. Keep the native circular zoom/color focus animation.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            for (SearchOrbView orb : new SearchOrbView[] {
+                    mSearchOrbView, mAccountView, mLanguageView, mExitPip}) {
+                orb.setDefaultFocusHighlightEnabled(false);
+                // A stateful, static oval highlight; the native Leanback orb
+                // still handles all focus zoom and color transitions.
+                orb.setForeground(ContextCompat.getDrawable(getContext(), R.drawable.pitube_orb_glass_focus));
+            }
+        }
         mPipTitle = findViewById(R.id.pip_title);
         mExitPip.setOnOrbClickedListener(v -> ViewManager.instance(getContext()).startView(PlaybackView.class));
         ViewUtil.enableMarquee(mPipTitle);
@@ -287,14 +303,10 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
 
         if (current != null && current.getAvatarImageUrl() != null) {
             loadIcon(mAccountView, current.getAvatarImageUrl(), false);
-            String accountName = current.getName() != null ? current.getName() : current.getEmail();
-            //TooltipCompatHandler.setTooltipText(mAccountView, Utils.updateTooltip(getContext(), accountName));
-            TooltipCompatHandler.setTooltipText(mAccountView, accountName);
         } else {
             Colors orbColors = mAccountView.getOrbColors();
             mAccountView.setOrbColors(new Colors(orbColors.color, orbColors.brightColor, ContextCompat.getColor(getContext(), R.color.orb_icon_color)));
             mAccountView.setOrbIcon(ContextCompat.getDrawable(getContext(), R.drawable.browse_title_account));
-            TooltipCompatHandler.setTooltipText(mAccountView, getContext().getString(R.string.dialog_account_none));
         }
     }
 

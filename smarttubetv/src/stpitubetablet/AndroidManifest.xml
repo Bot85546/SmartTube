@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- The test build can launch from a standard Android tablet app drawer. -->
+    <uses-feature
+        android:name="android.software.leanback"
+        android:required="false"
+        tools:replace="android:required" />
+
+    <application>
+        <property
+            android:name="android.software.leanback.supports_touch"
+            android:value="true" />
+
+        <activity
+            android:name="com.liskovsoft.smartyoutubetv2.tv.ui.main.SplashActivity"
+            android:screenOrientation="landscape"
+            tools:replace="android:screenOrientation" />
+        <activity
+            android:name="com.liskovsoft.smartyoutubetv2.tv.ui.browse.BrowseActivity"
+            android:screenOrientation="landscape"
+            tools:replace="android:screenOrientation" />
+        <activity
+            android:name="com.liskovsoft.smartyoutubetv2.tv.ui.playback.PlaybackActivity"
+            android:screenOrientation="landscape"
+            tools:replace="android:screenOrientation" />
+    </application>
+</manifest>

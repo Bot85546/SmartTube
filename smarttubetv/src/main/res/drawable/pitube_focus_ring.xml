@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Static frosted tint and fine edge light. The existing focus animation
+     changes only this drawable's view alpha; no blur, shader or extra bitmap. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="22dp" />
+            <gradient
+                android:angle="315"
+                android:startColor="#2CF4FAFF"
+                android:centerColor="#127AA9DB"
+                android:endColor="#00233958" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="22dp" />
+            <solid android:color="@android:color/transparent" />
+            <stroke
+                android:width="2dp"
+                android:color="@color/pitube_focus_border" />
+        </shape>
+    </item>
+</layer-list>

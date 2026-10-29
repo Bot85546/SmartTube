@@ -6,6 +6,13 @@ import com.liskovsoft.smartyoutubetv2.common.app.presenters.BrowsePresenter;
 import com.liskovsoft.smartyoutubetv2.common.app.presenters.interfaces.VideoGroupPresenter;
 
 public class VideoRowsFragment extends MultipleRowsFragment {
+    public static final String ARG_FEATURED_HOME = "pitube_featured_home";
+
+    @Override
+    protected boolean isFeaturedHome() {
+        return getArguments() != null && getArguments().getBoolean(ARG_FEATURED_HOME, false);
+    }
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

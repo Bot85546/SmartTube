@@ -17,4 +17,9 @@
 
 <com.liskovsoft.smartyoutubetv2.tv.ui.widgets.marqueetextviewcompat.MarqueeTextViewCompat xmlns:android="http://schemas.android.com/apk/res/android"
                                                                               android:id="@+id/title_text"
-                                                                              style="?attr/imageCardViewTitleStyle" />
+                                                                              style="?attr/imageCardViewTitleStyle"
+                                                                              android:fontFamily="sans-serif-medium"
+                                                                              android:textSize="15sp"
+                                                                              android:textColor="@color/pradi_text"
+                                                                              android:includeFontPadding="false"
+                                                                              android:letterSpacing="-0.01" />

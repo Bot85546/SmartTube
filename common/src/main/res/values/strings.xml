@@ -98,6 +98,7 @@
     <string name="color_scheme_red_grey">Red-grey</string>
     <string name="color_scheme_red">Red</string>
     <string name="color_scheme_dark_grey">Dark Grey</string>
+    <string name="color_scheme_pradi">PiTube · Cinema</string>
     <string name="disable_update_check">Disable update check</string>
     <string name="show_again">Show again</string>
     <string name="check_updates_auto">Notify about updates</string>

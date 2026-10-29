@@ -94,6 +94,8 @@ public class ComplexImageCardView extends ImageCardView {
     public void setSelected(boolean selected) {
         super.setSelected(selected);
 
+        mComplexImageView.setFocusHighlighted(selected);
+
         if (mIsCardTextAutoScrollEnabled) {
             enableTitleAnimation(selected);
             enableContentAnimation(selected);

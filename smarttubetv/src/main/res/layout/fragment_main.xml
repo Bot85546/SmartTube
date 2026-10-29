@@ -1,7 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<fragment
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/main_frame"
-    android:name="com.liskovsoft.smartyoutubetv2.tv.ui.browse.BrowseFragment"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/pitube_main_root"
     android:layout_width="match_parent"
-    android:layout_height="match_parent" />
+    android:layout_height="match_parent">
+
+    <fragment
+        android:id="@+id/main_frame"
+        android:name="com.liskovsoft.smartyoutubetv2.tv.ui.browse.BrowseFragment"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <!-- Search lives inside BrowseActivity, with the original screen behind
+         it during the transition; no second app task or window is launched. -->
+    <FrameLayout
+        android:id="@+id/pitube_inline_search_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/pitube_search_backdrop"
+        android:visibility="gone" />
+</FrameLayout>

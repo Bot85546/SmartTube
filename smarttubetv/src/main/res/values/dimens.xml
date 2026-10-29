@@ -3,8 +3,11 @@
     <!-- Default, same as xhdpi -->
     <!-- 320dpi, Amazon Fire TV Stick -->
 
-    <dimen name="card_width">200dp</dimen>
-    <dimen name="card_height">110dp</dimen>
+    <dimen name="card_width">216dp</dimen>
+    <dimen name="card_height">122dp</dimen>
+    <!-- Home-only spotlight cards; no extra bitmap layers or video decoders. -->
+    <dimen name="pitube_featured_card_width">356dp</dimen>
+    <dimen name="pitube_featured_card_height">200dp</dimen>
     <!-- text_badge_image_view.xml, default: 12sp -->
     <dimen name="card_badge_text_size">14sp</dimen>
 
@@ -50,12 +53,20 @@
     <!-- Old value: 167dp -->
     <dimen name="lb_browse_rows_margin_top">130dp</dimen>
 
+    <!-- Leanback inserted a 150 ms dead pause before opening the sidebar.
+         Start immediately and finish quickly without an abrupt jump. -->
+    <integer name="lb_browse_headers_transition_delay">0</integer>
+    <integer name="lb_browse_headers_transition_duration">185</integer>
+
     <!-- Increase this value to hide left strip from Browse fragment (when headers collapsed) -->
     <!-- Old value: 238dp -->
     <dimen name="lb_browse_rows_margin_start">265dp</dimen>
 
     <!-- Make search bar more compact so more buttons could be added after it. -->
     <dimen name="lb_search_bar_items_width">600dp</dimen>
+    <!-- Keep the glass field legible: Leanback fades it to 20% by default. -->
+    <integer name="lb_search_bar_text_mode_background_alpha">225</integer>
+    <integer name="lb_search_bar_speech_mode_background_alpha">205</integer>
 
     <!-- Increase player time text size -->
     <dimen name="lb_playback_controls_time_text_size">16sp</dimen>
@@ -81,13 +92,14 @@
     You can also override ShadowOverlayHelper.Options createShadowOverlayOptions() in
     ListRowPresenter which gives you some ability to change corner radius and focused and unfocused z.
     -->
-    <dimen name="lb_rounded_rect_corner_radius">12dp</dimen>
+    <dimen name="lb_rounded_rect_corner_radius">22dp</dimen>
 
     <!-- MOD: Zoom factor of focused button (SearchOrbView, default: 120%) -->
     <!--<item name="lb_search_orb_focused_zoom" type="fraction">120%</item>-->
 
-    <!-- MOD: Zoom factor of focused sidebar header (default: 1.2) -->
-    <!--<item format="float" name="lb_browse_header_select_scale" type="dimen">1.2</item>-->
+    <!-- Native Leanback 1.2x zoom cropped the glass-pill ends in the header
+         RecyclerView. The presenter animates a restrained scale instead. -->
+    <item format="float" name="lb_browse_header_select_scale" type="dimen">1.0</item>
 
     <!--
     Space between cards. Origin: 8dp More info:
@@ -95,8 +107,8 @@
     -->
     <!--<dimen name="lb_browse_item_horizontal_spacing">15dp</dimen>-->
     <!--<dimen name="lb_browse_item_vertical_spacing">15dp</dimen>-->
-    <dimen name="grid_item_horizontal_spacing">15dp</dimen>
-    <dimen name="grid_item_vertical_spacing">15dp</dimen>
+    <dimen name="grid_item_horizontal_spacing">24dp</dimen>
+    <dimen name="grid_item_vertical_spacing">25dp</dimen>
     <dimen name="grid_horizontal_margin">25dp</dimen>
 
     <!-- Browse headers spacing. Origin: 21dp -->

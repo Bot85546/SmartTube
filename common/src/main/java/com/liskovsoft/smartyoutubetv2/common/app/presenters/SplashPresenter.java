@@ -105,7 +105,8 @@ public class SplashPresenter extends BasePresenter<SplashView> {
     }
 
     private void runPerViewTasks() {
-        Utils.postDelayed(mCheckForUpdates, APP_INIT_DELAY_MS);
+        // Independent fork: never offer an upstream APK as an automatic update.
+        // Updates to this build should be signed and delivered separately.
         Utils.updateRemoteControlService(getContext());
 
         checkMasterPassword(() -> applyNewIntent(getView().getNewIntent()));

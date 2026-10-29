@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- PiTube: cinema-inspired graphite palette with subtle cool highlights. -->
+    <color name="pradi_background">#090D17</color>
+    <color name="pradi_surface">#151D2C</color>
+    <color name="pradi_surface_elevated">#28364B</color>
+    <color name="pradi_accent">#BBD9FF</color>
+    <color name="pradi_accent_soft">#F5F7FB</color>
+    <color name="pradi_text">#F7F8FA</color>
+    <color name="pitube_text_muted">#B9C7D9</color>
+    <color name="pitube_focus_border">#E5F2FFFF</color>
+    <color name="pitube_nav_selected">#334A66</color>
     <!-- MOD: Focused player button color (default: #66EEEEEE, new: #E8FFFFFF) -->
     <color name="lb_control_button_color">#86EEEEEE</color>
 
@@ -18,7 +28,7 @@
     <color name="card_selected_background_yellow">#ffaa3f</color>
     <color name="card_selected_background_grey">#343434</color>
     <color name="card_selected_text_black">#000000</color>
-    <color name="card_selected_text_grey">#343434</color>
+    <color name="card_selected_text_grey">#09121C</color>
     <color name="card_default_background">#0096a6</color>
     <color name="card_default_background_dark">#004B53</color>
     <color name="card_default_text">#FFFFFF</color>
@@ -60,9 +70,13 @@
     <color name="foreground_material_light_mod">@android:color/black</color>
 
     <!-- Default Orb buttons colors: search, accounts, search settings etc -->
-    <color name="orb_color">@color/grey</color>
-    <color name="orb_bright_color">@color/grey</color>
+    <color name="orb_color">#243753</color>
+    <color name="orb_bright_color">#3A5C87</color>
     <color name="orb_icon_color">@color/white</color>
+
+    <!-- Search screen shares the PiTube slate-on-navy palette. -->
+    <color name="lb_search_bar_text">#F6FAFF</color>
+    <color name="lb_search_bar_hint">#B8C7DD</color>
 
     <!-- Search page mic button color -->
     <color name="lb_speech_orb_not_recording">@color/orb_color</color>

@@ -263,7 +263,14 @@ public class SidebarService implements ProfileChangeListener {
                     MediaGroup.TYPE_NOTIFICATIONS,
                     MediaGroup.TYPE_PLAYBACK_QUEUE,
                     MediaGroup.TYPE_TRENDING,
-                    MediaGroup.TYPE_BLOCKED_CHANNELS
+                    MediaGroup.TYPE_BLOCKED_CHANNELS,
+                    MediaGroup.TYPE_SHORTS,
+                    MediaGroup.TYPE_KIDS_HOME,
+                    MediaGroup.TYPE_SPORTS,
+                    MediaGroup.TYPE_LIVE,
+                    MediaGroup.TYPE_GAMING,
+                    MediaGroup.TYPE_NEWS,
+                    MediaGroup.TYPE_MY_VIDEOS
             }));
         }
     }

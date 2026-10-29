@@ -1,6 +1,7 @@
 package com.liskovsoft.smartyoutubetv2.tv.ui.browse;
 
 import android.graphics.drawable.Drawable;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -21,6 +22,8 @@ import androidx.leanback.widget.PageRow;
 import androidx.leanback.widget.Presenter;
 import androidx.leanback.widget.PresenterSelector;
 import androidx.leanback.widget.TitleHelper;
+import androidx.leanback.widget.SearchOrbView;
+import androidx.leanback.widget.TitleViewAdapter;
 import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.BrowseSection;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.SettingsGroup;
@@ -37,7 +40,9 @@ import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.IconHeaderItemPresenter;
 import com.liskovsoft.smartyoutubetv2.tv.ui.browse.dialog.ErrorDialogFragment;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.headers.ExtendedHeadersSupportFragment;
+import com.liskovsoft.smartyoutubetv2.tv.ui.main.PiTubeCrashReporter;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.misc.ProgressBarManager;
+import androidx.leanback.widget.VerticalGridView;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -103,6 +108,41 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
+        // Keep the sidebar background behind the movable focus capsule.
+        PiTubeCrashReporter.note("BrowseFragment: onActivityCreated");
+        if (!PiTubeCrashReporter.isSafeMode(getContext()) && getHeadersSupportFragment() != null
+                && getHeadersSupportFragment().getVerticalGridView() != null) {
+            VerticalGridView grid = getHeadersSupportFragment().getVerticalGridView();
+            // BaseGridView normally forces selected rows to the top alignment
+            // on every key press. Only the PiTube sidebar uses item scrolling:
+            // D-pad focus moves, but the menu stays fixed until it overflows.
+            grid.setTag("pitube:fixed-sidebar");
+            grid.setFocusScrollStrategy(VerticalGridView.FOCUS_SCROLL_ITEM);
+            grid.setBackgroundColor(Color.TRANSPARENT);
+            View headersRoot = getHeadersSupportFragment().getView();
+            if (headersRoot != null) {
+                headersRoot.setBackgroundResource(R.drawable.pitube_sidebar_panel);
+            }
+            // Padding belongs to the scrollable content: Leanback's selection
+            // alignment can scroll it right behind the opaque title bar.
+            // Reserve actual layout space instead, so Home is visible and the
+            // labels remain stationary while the focus glass moves between them.
+            ViewGroup.LayoutParams layoutParams = grid.getLayoutParams();
+            if (layoutParams instanceof ViewGroup.MarginLayoutParams) {
+                ViewGroup.MarginLayoutParams margins =
+                        (ViewGroup.MarginLayoutParams) layoutParams;
+                margins.topMargin = Math.round(166 *
+                        getResources().getDisplayMetrics().density);
+                grid.setLayoutParams(margins);
+            }
+            grid.setPadding(grid.getPaddingLeft(), 0, grid.getPaddingRight(),
+                    grid.getPaddingBottom());
+            grid.setClipToPadding(false);
+        }
+        if (getTitleView() != null) {
+            getTitleView().setBackgroundResource(R.drawable.pitube_top_bar);
+        }
+
         setupEventListeners();
 
         prepareEntranceTransition();
@@ -115,6 +155,18 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
             selectSectionItem(video);
         });
         mCrashRestorer.restorePlayback();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        if (!PiTubeCrashReporter.isSafeMode(getContext()) && getHeadersSupportFragment() != null
+                && getHeadersSupportFragment().getVerticalGridView() != null) {
+            getHeadersSupportFragment().getVerticalGridView()
+                    .setWindowAlignment(VerticalGridView.WINDOW_ALIGN_BOTH_EDGE);
+            getHeadersSupportFragment().getVerticalGridView()
+                    .setFocusScrollStrategy(VerticalGridView.FOCUS_SCROLL_ITEM);
+        }
     }
 
     @Override
@@ -147,7 +199,13 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
                 }
         );
 
-        setOnSearchClickedListener(view -> SearchPresenter.instance(getContext()).startSearch(null));
+        setOnSearchClickedListener(view -> {
+            if (getActivity() instanceof BrowseActivity) {
+                ((BrowseActivity) getActivity()).openInlineSearch();
+            } else {
+                SearchPresenter.instance(getContext()).startSearch(null);
+            }
+        });
     }
 
     private void setupFragmentFactory() {
@@ -189,7 +247,6 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
         setHeadersTransitionOnBackEnabled(true);
 
         int brandColorRes = Helpers.getThemeAttr(getContext(), R.attr.brandColor);
-        int brandAccentColorRes = Helpers.getThemeAttr(getContext(), R.attr.brandAccentColor);
 
         updateBadge();
 
@@ -200,7 +257,10 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
         setBrandColor(ContextCompat.getColor(getContext(), brandColorRes));
 
         // Set search icon color.
-        setSearchAffordanceColor(ContextCompat.getColor(getContext(), brandAccentColorRes));
+        // SearchOrbView's icon is white. A pale-blue orb made it almost
+        // invisible, so use a darker glass blue with crisp white glyphs.
+        setSearchAffordanceColors(new SearchOrbView.Colors(
+                Color.rgb(36, 55, 83), Color.rgb(58, 92, 135), Color.WHITE));
 
         setHeaderPresenterSelector(new PresenterSelector() {
             private final Map<Integer, Presenter> mPresenterMap = new HashMap<>();
@@ -233,6 +293,18 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
                 return null;
             }
         });
+    }
+
+    @Override
+    public void showTitle(boolean show) {
+        // PiTube's toolbar is persistent on all Browse pages. Leanback hides
+        // it for non-first PageRows, which abruptly removes search/profile.
+        super.showTitle(true);
+    }
+
+    @Override
+    public void showTitle(int flags) {
+        super.showTitle(TitleViewAdapter.FULL_VIEW_VISIBLE);
     }
 
     private int getSelectedHeaderId() {

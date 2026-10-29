@@ -29,6 +29,7 @@
                   android:layout_gravity="center_vertical|start">
         <androidx.leanback.widget.SearchOrbView
             android:id="@+id/title_orb"
+            android:defaultFocusHighlightEnabled="false"
             android:layout_height="wrap_content"
             android:layout_width="wrap_content"
             android:transitionGroup="true"
@@ -38,6 +39,7 @@
 
         <com.liskovsoft.smartyoutubetv2.tv.ui.widgets.search.LongClickSearchOrbView
             android:id="@+id/account_orb"
+            android:defaultFocusHighlightEnabled="false"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:transitionGroup="true"
@@ -52,6 +54,7 @@
 
         <androidx.leanback.widget.SearchOrbView
             android:id="@+id/language_orb"
+            android:defaultFocusHighlightEnabled="false"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:transitionGroup="true"
@@ -66,6 +69,7 @@
 
         <androidx.leanback.widget.SearchOrbView
             android:id="@+id/exit_pip"
+            android:defaultFocusHighlightEnabled="false"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:transitionGroup="true"

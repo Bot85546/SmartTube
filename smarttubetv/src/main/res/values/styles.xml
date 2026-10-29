@@ -248,4 +248,40 @@
         <item name="cardSelectedBackground">@color/card_selected_background_white_grey</item>
     </style>
     <!--  End Color scheme: Dark Blue (OLED)  -->
+    <!-- Premium, restrained TV-first PiTube appearance. -->
+    <style name="App.Theme.Pradi.Player" parent="App.Theme.DarkGrey.Player">
+        <item name="android:windowBackground">@color/pradi_background</item>
+        <item name="shelfBackground">@color/pradi_background</item>
+        <item name="cardDefaultBackground">@color/pradi_surface</item>
+        <item name="cardSelectedBackground">@color/pradi_surface_elevated</item>
+        <item name="playbackProgressPrimaryColor">@color/pradi_accent</item>
+        <item name="playbackProgressSecondaryColor">@color/pradi_surface_elevated</item>
+        <item name="playbackControlsIconHighlightColor">@color/pradi_accent</item>
+        <item name="android:colorAccent">@color/pradi_accent</item>
+    </style>
+    <style name="App.Theme.Pradi.Browse" parent="App.Theme.DarkGrey.Browse">
+        <item name="android:windowBackground">@drawable/pitube_main_backdrop</item>
+        <item name="brandColor">@color/pradi_background</item>
+        <item name="brandAccentColor">@color/pradi_accent</item>
+        <item name="shelfBackground">@color/pradi_background</item>
+        <item name="cardDefaultBackground">@color/pradi_surface</item>
+        <item name="cardSelectedBackground">@color/pradi_surface_elevated</item>
+        <item name="appLogo">@mipmap/app_logo</item>
+        <item name="android:colorAccent">@color/pradi_accent</item>
+    </style>
+    <style name="App.Theme.Pradi.Search" parent="App.Theme.Pradi.Browse">
+        <item name="android:windowBackground">@drawable/pitube_search_backdrop</item>
+        <item name="android:windowAnimationStyle">@style/PiTubeSearchWindowAnimations</item>
+    </style>
+    <style name="PiTubeSearchWindowAnimations">
+        <item name="android:activityOpenEnterAnimation">@anim/pitube_search_enter</item>
+        <item name="android:activityOpenExitAnimation">@anim/pitube_search_underlay</item>
+        <item name="android:activityCloseEnterAnimation">@anim/pitube_search_return</item>
+        <item name="android:activityCloseExitAnimation">@anim/pitube_search_exit</item>
+    </style>
+    <style name="App.Theme.Pradi.Preferences" parent="App.Theme.DarkGrey.Preferences">
+        <item name="android:windowBackground">@color/pradi_background</item>
+        <item name="android:colorPrimary">@color/pradi_surface</item>
+        <item name="android:colorAccent">@color/pradi_accent</item>
+    </style>
 </resources>

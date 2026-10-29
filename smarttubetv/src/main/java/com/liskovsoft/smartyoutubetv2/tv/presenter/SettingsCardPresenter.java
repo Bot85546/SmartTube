@@ -2,58 +2,59 @@ package com.liskovsoft.smartyoutubetv2.tv.presenter;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
-import android.os.Build.VERSION;
+import android.graphics.Color;
+import android.os.Build;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.core.content.ContextCompat;
 import androidx.leanback.widget.Presenter;
-import com.liskovsoft.sharedutils.helpers.Helpers;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.SettingsItem;
 import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData;
 import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 public class SettingsCardPresenter extends Presenter {
-    private int mDefaultBackgroundColor;
     private int mDefaultTextColor;
-    private int mSelectedBackgroundColor;
     private int mSelectedTextColor;
+    private static final DecelerateInterpolator FOCUS_EASING = new DecelerateInterpolator();
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent) {
         Context context = parent.getContext();
 
-        mDefaultBackgroundColor =
-                ContextCompat.getColor(context, Helpers.getThemeAttr(context, R.attr.cardDefaultBackground));
         mDefaultTextColor =
-                ContextCompat.getColor(context, R.color.card_default_text);
-        mSelectedBackgroundColor =
-                ContextCompat.getColor(context, R.color.card_selected_background_white);
+                ContextCompat.getColor(context, R.color.pradi_text);
         mSelectedTextColor =
-                ContextCompat.getColor(context, R.color.card_selected_text_grey);
+                ContextCompat.getColor(context, R.color.pradi_accent_soft);
 
         @SuppressLint("InflateParams")
         View container = LayoutInflater.from(context).inflate(R.layout.settings_card, null);
-        container.setBackgroundColor(mDefaultBackgroundColor);
-        //if (VERSION.SDK_INT >= 23 && MainUIData.instance(context).isUiTweakEnabled(MainUIData.UI_TWEAK_ROUNDED_CORNERS)) {
-        //    container.setForeground(ContextCompat.getDrawable(context, R.drawable.lb_card_outline));
-        //}
+        container.setBackgroundResource(R.drawable.pitube_settings_glass);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            container.setDefaultFocusHighlightEnabled(false);
+        }
 
         TextView textView = container.findViewById(R.id.settings_title);
-        textView.setBackgroundColor(mDefaultBackgroundColor);
+        textView.setBackgroundColor(Color.TRANSPARENT);
         textView.setTextColor(mDefaultTextColor);
 
         ViewUtil.setTextScrollSpeed(textView, getCardTextScrollSpeed(context));
 
         container.setOnFocusChangeListener((v, hasFocus) -> {
-            int backgroundColor = hasFocus ? mSelectedBackgroundColor : mDefaultBackgroundColor;
             int textColor = hasFocus ? mSelectedTextColor : mDefaultTextColor;
-            
-            textView.setBackgroundColor(backgroundColor);
             textView.setTextColor(textColor);
+            // Transform-only focus transition: no live blur or new bitmap layer.
+            container.animate().cancel();
+            container.animate()
+                    .scaleX(hasFocus ? 1.035f : 1f)
+                    .scaleY(hasFocus ? 1.035f : 1f)
+                    .setDuration(150)
+                    .setInterpolator(FOCUS_EASING)
+                    .start();
 
             if (hasFocus) {
                 ViewUtil.enableMarquee(textView);
@@ -83,6 +84,9 @@ public class SettingsCardPresenter extends Presenter {
 
     @Override
     public void onUnbindViewHolder(ViewHolder viewHolder) {
+        viewHolder.view.animate().cancel();
+        viewHolder.view.setScaleX(1f);
+        viewHolder.view.setScaleY(1f);
     }
 
     protected boolean isCardTextAutoScrollEnabled(Context context) {

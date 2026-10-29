@@ -28,6 +28,7 @@ import com.liskovsoft.smartyoutubetv2.tv.presenter.ChannelHeaderPresenter.Channe
 import com.liskovsoft.smartyoutubetv2.tv.presenter.ShortsCardPresenter;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.VideoCardPresenter;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.CustomListRowPresenter;
+import com.liskovsoft.smartyoutubetv2.tv.presenter.FeaturedVideoCardPresenter;
 import com.liskovsoft.smartyoutubetv2.tv.presenter.base.OnItemLongPressedListener;
 import com.liskovsoft.smartyoutubetv2.tv.ui.browse.interfaces.VideoSection;
 import com.liskovsoft.smartyoutubetv2.tv.ui.common.LeanbackActivity;
@@ -49,6 +50,7 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
     private final List<VideoGroup> mPendingUpdates = new ArrayList<>();
     private VideoGroupPresenter mMainPresenter;
     private VideoCardPresenter mCardPresenter;
+    private FeaturedVideoCardPresenter mFeaturedPresenter;
     private ShortsCardPresenter mShortsPresenter;
     private int mSelectedRowIndex = -1;
     private ChannelHeaderCallback mChannelHeaderCallback;
@@ -59,6 +61,9 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
         
         mMainPresenter = getMainPresenter();
         mCardPresenter = new VideoCardPresenter();
+        if (isFeaturedHome()) {
+            mFeaturedPresenter = new FeaturedVideoCardPresenter();
+        }
         mShortsPresenter = new ShortsCardPresenter();
         mBackgroundManager = ((LeanbackActivity) getActivity()).getBackgroundManager();
 
@@ -72,6 +77,11 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
     }
 
     protected abstract VideoGroupPresenter getMainPresenter();
+
+    /** Restrict the prominent first shelf to Home, keeping other sections compact. */
+    protected boolean isFeaturedHome() {
+        return false;
+    }
 
     private void applyPendingUpdates() {
         // prevent modification within update method
@@ -106,6 +116,9 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
         setOnItemViewClickedListener(new ItemViewClickedListener());
         setOnItemViewSelectedListener(new ItemViewSelectedListener());
         mCardPresenter.setOnItemViewLongPressedListener(new ItemViewLongPressedListener());
+        if (mFeaturedPresenter != null) {
+            mFeaturedPresenter.setOnItemViewLongPressedListener(new ItemViewLongPressedListener());
+        }
         mShortsPresenter.setOnItemViewLongPressedListener(new ItemViewLongPressedListener());
     }
 
@@ -253,7 +266,12 @@ public abstract class MultipleRowsFragment extends RowsSupportFragment implement
             HeaderItem rowHeader = new HeaderItem(group.getTitle());
             int videoGroupId = group.getId(); // Create unique int from category.
 
-            VideoGroupObjectAdapter videoGroupAdapter = new VideoGroupObjectAdapter(group, group.isShorts() ? mShortsPresenter : mCardPresenter);
+            boolean firstHomeShelf = mFeaturedPresenter != null
+                    && mVideoGroupAdapters.isEmpty()
+                    && !group.isShorts();
+            VideoGroupObjectAdapter videoGroupAdapter = new VideoGroupObjectAdapter(
+                    group, group.isShorts() ? mShortsPresenter :
+                            firstHomeShelf ? mFeaturedPresenter : mCardPresenter);
 
             mVideoGroupAdapters.put(videoGroupId, videoGroupAdapter);
 

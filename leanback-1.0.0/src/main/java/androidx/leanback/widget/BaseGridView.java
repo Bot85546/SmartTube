@@ -1009,9 +1009,14 @@ public abstract class BaseGridView extends RecyclerView {
 
     @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
-        // MOD: Improve touchscreen and mouse support
-        // Force enable keyboard mode (FOCUS_SCROLL_ALIGNED)
-        mLayoutManager.setFocusScrollStrategy(BaseGridView.FOCUS_SCROLL_ALIGNED);
+        // PiTube's fixed TV navigation rail must only move when items actually
+        // overflow the available height. The old unconditional ALIGNED mode
+        // scrolled Home/Music behind the top toolbar on *every* D-pad press.
+        // Preserve the original aligned behaviour for all video grids.
+        mLayoutManager.setFocusScrollStrategy(
+                "pitube:fixed-sidebar".equals(getTag())
+                        ? BaseGridView.FOCUS_SCROLL_ITEM
+                        : BaseGridView.FOCUS_SCROLL_ALIGNED);
 
         if (mOnKeyInterceptListener != null && mOnKeyInterceptListener.onInterceptKeyEvent(event)) {
             return true;
@@ -1039,7 +1044,9 @@ public abstract class BaseGridView extends RecyclerView {
         // Force enable touch mode (FOCUS_SCROLL_PAGE)
         // Also, exclude clicks to avoid miss focus.
         boolean isClick = event.getAction() == MotionEvent.ACTION_UP && mPrevAction == MotionEvent.ACTION_DOWN;
-        mLayoutManager.setFocusScrollStrategy(isClick || mSkipFirstTouch ? FOCUS_SCROLL_ALIGNED : FOCUS_SCROLL_PAGE);
+        mLayoutManager.setFocusScrollStrategy(
+                "pitube:fixed-sidebar".equals(getTag()) ? FOCUS_SCROLL_ITEM
+                        : (isClick || mSkipFirstTouch ? FOCUS_SCROLL_ALIGNED : FOCUS_SCROLL_PAGE));
         mPrevAction = event.getAction();
         mSkipFirstTouch = false;
 

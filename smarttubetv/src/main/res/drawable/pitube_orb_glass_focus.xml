@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Circular, state-driven glass rim. SearchOrbView keeps the native focus zoom. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape android:shape="oval">
+            <gradient
+                android:angle="315"
+                android:startColor="#399AD6FF"
+                android:centerColor="#237CB7E8"
+                android:endColor="#115270BD" />
+            <stroke android:width="1.5dp" android:color="#F1F7FFFF" />
+        </shape>
+    </item>
+    <item>
+        <color android:color="@android:color/transparent" />
+    </item>
+</selector>

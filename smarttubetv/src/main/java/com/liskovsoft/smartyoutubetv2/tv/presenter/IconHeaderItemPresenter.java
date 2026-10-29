@@ -1,6 +1,7 @@
 package com.liskovsoft.smartyoutubetv2.tv.presenter;
 
 import android.content.Context;
+import android.os.Build;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.view.LayoutInflater;
@@ -23,6 +24,7 @@ import com.bumptech.glide.request.target.Target;
 import com.liskovsoft.sharedutils.mylogger.Log;
 import com.liskovsoft.smartyoutubetv2.tv.R;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
+import com.liskovsoft.smartyoutubetv2.tv.ui.main.PiTubeCrashReporter;
 
 public class IconHeaderItemPresenter extends RowHeaderPresenter {
     private static final String TAG = IconHeaderItemPresenter.class.getSimpleName();
@@ -38,8 +40,7 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup) {
-        mUnselectedAlpha = viewGroup.getResources()
-                .getFraction(R.fraction.lb_browse_header_unselect_alpha, 1, 1);
+        mUnselectedAlpha = 0.72f;
         LayoutInflater inflater = (LayoutInflater) viewGroup.getContext()
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         mDefaultIcon = new ColorDrawable(ContextCompat.getColor(viewGroup.getContext(), R.color.lb_grey));
@@ -62,6 +63,10 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
 
         View rootView = viewHolder.view;
         rootView.setFocusable(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                && !PiTubeCrashReporter.isSafeMode(rootView.getContext())) {
+            rootView.setDefaultFocusHighlightEnabled(false);
+        }
 
         ImageView iconView = rootView.findViewById(R.id.header_icon);
         if (iconView != null) {
@@ -94,8 +99,12 @@ public class IconHeaderItemPresenter extends RowHeaderPresenter {
     // mUnselectAlpha, and also assumes the xml inflation will return a RowHeaderView.
     @Override
     protected void onSelectLevelChanged(RowHeaderPresenter.ViewHolder holder) {
-        holder.view.setAlpha(mUnselectedAlpha + holder.getSelectLevel() *
+        float progress = holder.getSelectLevel();
+        holder.view.setAlpha(mUnselectedAlpha + progress *
                 (1.0f - mUnselectedAlpha));
+        // Keep the glyph and label exactly where they are. One independent
+        // highlight travels vertically behind the whole menu instead.
+        holder.view.setSelected(progress > 0.5f);
     }
 
     private final RequestListener<Drawable> mErrorListener = new RequestListener<Drawable>() {

@@ -298,7 +298,12 @@ public class SponsorBlockData {
                 if (SponsorSegment.CATEGORY_FILLER.equals(segmentCategory)) {
                     mActions.add(SegmentAction.from(segmentCategory, ACTION_DO_NOTHING));
                 } else {
-                    mActions.add(SegmentAction.from(segmentCategory, ACTION_SKIP_WITH_TOAST));
+                    // Skip sponsored messages without interrupting playback with a toast.
+                    // Leave unrelated segments intact; categories remain configurable.
+                    int defaultAction = SponsorSegment.CATEGORY_SPONSOR.equals(segmentCategory)
+                            || SponsorSegment.CATEGORY_SELF_PROMO.equals(segmentCategory)
+                            ? ACTION_SKIP_ONLY : ACTION_DO_NOTHING;
+                    mActions.add(SegmentAction.from(segmentCategory, defaultAction));
                 }
             }
         }

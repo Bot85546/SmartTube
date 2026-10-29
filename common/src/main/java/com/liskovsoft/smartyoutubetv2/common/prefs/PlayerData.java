@@ -773,6 +773,10 @@ public class PlayerData extends DataChangeBase implements PlayerConstants, Profi
      * Overrides for auto detected values
      */
     private void initDefaultFormats() {
+        // Prefer the highest compatible VP9 format on the user's Sony BRAVIA VH1.
+        // Users can override this in video presets at any time.
+        mDefaultVideoFormats.put("BRAVIA VH1", FormatItem.VIDEO_4K_VP9_60);
+        mDefaultVideoFormats.put("BRAVIA 4K VH1", FormatItem.VIDEO_4K_VP9_60);
         mDefaultVideoFormats.put("SHIELD Android TV", FormatItem.VIDEO_4K_VP9_60);
         mDefaultVideoFormats.put("AFTMM", FormatItem.VIDEO_4K_VP9_60); // Stick 4K 2018
         mDefaultVideoFormats.put("AFTKA", FormatItem.VIDEO_4K_VP9_60); // Stick 4K Max 2021
