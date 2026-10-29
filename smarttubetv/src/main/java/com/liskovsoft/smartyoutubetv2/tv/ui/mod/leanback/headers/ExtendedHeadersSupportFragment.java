@@ -39,6 +39,8 @@ public class ExtendedHeadersSupportFragment extends HeadersSupportFragment {
     private VerticalGridView mHeadersGrid;
     private ViewTreeObserver.OnGlobalFocusChangeListener mHeaderFocusListener;
     private RecyclerView.OnScrollListener mHeaderScrollListener;
+    private ViewTreeObserver mFocusObserver;
+    private OnLayoutChangeListener mHeaderLayoutListener;
     // Reused coordinates avoid allocations during remote-navigation animations.
     private final int[] mHeaderWindowLocation = new int[2];
     private final int[] mHostWindowLocation = new int[2];
@@ -61,16 +63,19 @@ public class ExtendedHeadersSupportFragment extends HeadersSupportFragment {
         }
 
         mFocusCapsuleHost.setClipChildren(false);
+        mFocusCapsuleHost.setClipToPadding(false);
         mFocusCapsule = new View(view.getContext());
         mFocusCapsule.setBackground(new PiTubeGlassFocusDrawable(
                 getResources().getDisplayMetrics().density));
         mFocusCapsule.setFocusable(false);
         mFocusCapsule.setClickable(false);
+        mFocusCapsule.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
+        mFocusCapsule.setAlpha(0.84f);
         mFocusCapsule.setVisibility(View.INVISIBLE);
-        // The focus highlight is a single sibling behind the entire list.
-        // Neither the text nor its icon moves while the highlight slides.
+        // Overlay the pill to avoid Leanback's opaque background concealing it.
+        // It remains non-interactive so remote focus stays with menu entries.
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(dp(190), dp(48));
-        mFocusCapsuleHost.addView(mFocusCapsule, 0, params);
+        mFocusCapsuleHost.addView(mFocusCapsule, params);
 
         mHeaderFocusListener = (oldFocus, newFocus) -> {
             if (newFocus != null && isInside(newFocus, mHeadersGrid)) {
@@ -78,23 +83,33 @@ public class ExtendedHeadersSupportFragment extends HeadersSupportFragment {
                 updateCapsule(true);
             }
         };
-        mFocusCapsuleHost.getViewTreeObserver()
-                .addOnGlobalFocusChangeListener(mHeaderFocusListener);
-
         mHeaderScrollListener = new RecyclerView.OnScrollListener() {
             @Override
             public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy) {
+                updateSelectedHeader();
                 updateCapsule(false);
             }
         };
         mHeadersGrid.addOnScrollListener(mHeaderScrollListener);
+        mHeaderLayoutListener = (changed, left, top, right, bottom,
+                                 oldLeft, oldTop, oldRight, oldBottom) -> {
+            updateSelectedHeader();
+            updateCapsule(false);
+        };
+        mHeadersGrid.addOnLayoutChangeListener(mHeaderLayoutListener);
         mFocusCapsuleHost.post(() -> {
-            if (mHeadersGrid == null) return;
-            View focused = mHeadersGrid.findFocus();
-            if (focused != null) {
-                mCurrentHeader = directGridChild(focused);
-                updateCapsule(false);
+            if (mHeadersGrid == null || mFocusCapsuleHost == null) return;
+            // Register only after attachment; a fragment's observer can change.
+            mFocusObserver = mFocusCapsuleHost.getViewTreeObserver();
+            if (mFocusObserver.isAlive()) {
+                mFocusObserver.addOnGlobalFocusChangeListener(mHeaderFocusListener);
             }
+            View focused = mHeadersGrid.findFocus();
+            if (focused != null && isInside(focused, mHeadersGrid)) {
+                mCurrentHeader = directGridChild(focused);
+            }
+            updateSelectedHeader();
+            updateCapsule(false);
         });
         PiTubeCrashReporter.note("Headers: focus capsule ready");
     }
@@ -125,6 +140,19 @@ public class ExtendedHeadersSupportFragment extends HeadersSupportFragment {
             item = parent instanceof View ? (View) parent : null;
         }
         return null;
+    }
+
+    private void updateSelectedHeader() {
+        if (mHeadersGrid == null || (mCurrentHeader != null
+                && mCurrentHeader.isAttachedToWindow()
+                && isInside(mCurrentHeader, mHeadersGrid))) {
+            return;
+        }
+        RecyclerView.ViewHolder holder = mHeadersGrid.findViewHolderForAdapterPosition(
+                mHeadersGrid.getSelectedPosition());
+        if (holder != null) {
+            mCurrentHeader = holder.itemView;
+        }
     }
 
     private void updateCapsule(boolean animate) {
@@ -159,14 +187,18 @@ public class ExtendedHeadersSupportFragment extends HeadersSupportFragment {
 
     @Override
     public void onDestroyView() {
-        if (mFocusCapsuleHost != null && mHeaderFocusListener != null
-                && mFocusCapsuleHost.getViewTreeObserver().isAlive()) {
-            mFocusCapsuleHost.getViewTreeObserver()
-                    .removeOnGlobalFocusChangeListener(mHeaderFocusListener);
+        if (mFocusObserver != null && mHeaderFocusListener != null
+                && mFocusObserver.isAlive()) {
+            mFocusObserver.removeOnGlobalFocusChangeListener(mHeaderFocusListener);
         }
         if (mHeadersGrid != null && mHeaderScrollListener != null) {
             mHeadersGrid.removeOnScrollListener(mHeaderScrollListener);
         }
+        if (mHeadersGrid != null && mHeaderLayoutListener != null) {
+            mHeadersGrid.removeOnLayoutChangeListener(mHeaderLayoutListener);
+        }
+        mFocusObserver = null;
+        mHeaderLayoutListener = null;
         mFocusCapsule = null;
         mCurrentHeader = null;
         mHeadersGrid = null;

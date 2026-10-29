@@ -65,6 +65,12 @@ Sony BRAVIA VH1 hardware. It is **not** an official YouTube or Sony application.
   scroll strategy. PiTube now tags only the sidebar for item-visibility
   scrolling, so all seven default labels stay in place and the glass focus
   moves independently. Video grids retain their original scrolling behaviour.
+- v11 reserves the sidebar's toolbar clearance in the actual Leanback XML
+  layout, including on devices where a later layout callback does not run.
+  The glass capsule is a non-interactive translucent overlay; its observer
+  attaches after the view joins the window, with a selected-row fallback.
+- GitHub Actions builds both Android TV and tablet-preview variants on pushes
+  to `pitube-v10`, and publishes direct APK downloads in a test prerelease.
 
 ## Build requirements
 
@@ -106,9 +112,14 @@ equivalence with a physical Sony TV.
 The debug APK is signed using the developer's local debug keystore.
 The universal APK should appear under
 `smarttubetv/build/outputs/apk/stpitube/debug/`, named similarly to
-`PiTube_pitube_32.68-pitube.10_universal.apk`. Keep the debug keystore if you
+`PiTube_pitube_32.68-pitube.11_universal.apk`. Keep the debug keystore if you
 want to update the same installation later. For distribution, use a dedicated
 release signing key.
+
+Automated GitHub builds use a temporary Android debug key unless the owner
+sets `PITUBE_KEYSTORE_B64` plus the matching `PITUBE_STORE_PASSWORD`,
+`PITUBE_KEY_ALIAS`, and `PITUBE_KEY_PASSWORD` repository secrets. Android
+rejects an APK signed with a different key over an existing installation.
 
 ## Build verification
 
@@ -117,8 +128,9 @@ using OpenJDK 17, Gradle 7.5, and Android SDK 34. The universal APK was
 verified to declare `dev.pradi.pitube`, advertise an Android TV launcher,
 contain ARMv7 and ARM64 libraries, and pass APK signature checks for v1/v2.
 This verifies packaging, not live YouTube playback or appearance on a TV.
-The updated version is `32.68-pitube.10` (`versionCode` 2467) and uses the same
-debug signing certificate as `.1`, so it can install over the earlier PiTube APK.
+The current version is `32.68-pitube.11` (`versionCode` 2468). Locally signed
+APKs update previous PiTube installations only when the signing certificate
+matches. GitHub Actions uses its own debug key unless signing secrets are set.
 
 ## Installation
 
