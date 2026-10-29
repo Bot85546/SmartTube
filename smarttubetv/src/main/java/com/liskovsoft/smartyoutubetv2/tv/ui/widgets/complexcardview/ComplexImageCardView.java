@@ -1,15 +1,20 @@
 package com.liskovsoft.smartyoutubetv2.tv.ui.widgets.complexcardview;
 
+import android.animation.ValueAnimator;
 import android.content.Context;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LayerDrawable;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.AttributeSet;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.ImageView.ScaleType;
 import android.widget.TextView;
 import androidx.leanback.widget.ImageCardView;
 
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.Video;
 import com.liskovsoft.smartyoutubetv2.tv.R;
+import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.headers.PiTubeGlassFocusDrawable;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 public class ComplexImageCardView extends ImageCardView {
@@ -17,6 +22,9 @@ public class ComplexImageCardView extends ImageCardView {
     private Handler mHandler;
     private boolean mIsCardTextAutoScrollEnabled;
     private boolean mIsBadgeEnabled;
+    private PiTubeGlassFocusDrawable mGlassOutline;
+    private ValueAnimator mOutlineAnimator;
+    private int mOutlineAlpha;
 
     public ComplexImageCardView(Context context) {
         super(context);
@@ -39,6 +47,12 @@ public class ComplexImageCardView extends ImageCardView {
     private void init() {
         mComplexImageView = findViewById(R.id.main_image_wrapper);
         mHandler = new Handler(Looper.getMainLooper());
+        mGlassOutline = new PiTubeGlassFocusDrawable(
+                getResources().getDisplayMetrics().density, true);
+        mGlassOutline.setAlpha(0);
+        Drawable previous = getForeground();
+        setForeground(previous == null ? mGlassOutline
+                : new LayerDrawable(new Drawable[] {previous, mGlassOutline}));
     }
 
     private void enableTitleAnimation(boolean enable) {
@@ -94,7 +108,9 @@ public class ComplexImageCardView extends ImageCardView {
     public void setSelected(boolean selected) {
         super.setSelected(selected);
 
-        mComplexImageView.setFocusHighlighted(selected);
+        // Border covers both the thumbnail and the title, rather than just
+        // overlaying the image. Animate only the item actually selected.
+        updateGlassOutline(selected);
 
         if (mIsCardTextAutoScrollEnabled) {
             enableTitleAnimation(selected);
@@ -102,6 +118,46 @@ public class ComplexImageCardView extends ImageCardView {
         }
 
         enableVideoPreview(selected);
+    }
+
+    private void updateGlassOutline(boolean selected) {
+        if (mGlassOutline == null) return;
+        if (mOutlineAnimator != null) mOutlineAnimator.cancel();
+        mGlassOutline.setActive(selected);
+        int target = selected ? 255 : 0;
+        if (!isAttachedToWindow() || mOutlineAlpha == target) {
+            mOutlineAlpha = target;
+            mGlassOutline.setAlpha(target);
+            return;
+        }
+        mOutlineAnimator = ValueAnimator.ofInt(mOutlineAlpha, target);
+        mOutlineAnimator.setDuration(170);
+        mOutlineAnimator.setInterpolator(new DecelerateInterpolator());
+        mOutlineAnimator.addUpdateListener(animation -> {
+            mOutlineAlpha = (int) animation.getAnimatedValue();
+            mGlassOutline.setAlpha(mOutlineAlpha);
+        });
+        mOutlineAnimator.start();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        if (mOutlineAnimator != null) {
+            mOutlineAnimator.cancel();
+            mOutlineAnimator = null;
+        }
+        if (mGlassOutline != null) {
+            mGlassOutline.setActive(false);
+            mGlassOutline.setAlpha(0);
+            mOutlineAlpha = 0;
+        }
+        super.onDetachedFromWindow();
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        super.onAttachedToWindow();
+        if (isSelected()) updateGlassOutline(true);
     }
 
     @Override

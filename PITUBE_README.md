@@ -11,9 +11,10 @@ Sony BRAVIA VH1 hardware. It is **not** an official YouTube or Sony application.
 - Reworked TV-first, Apple TV-inspired look: navy glass-style navigation rail,
   persistent translucent top toolbar, deep-slate content, brighter glass focus
   pills, and a matching search experience. Other upstream themes remain selectable.
-- Lightweight remote-focus animation: Leanback's extra-small native card zoom
-  plus a 170 ms opacity fade of a static frosted-glass gradient and fine focus
-  rim. No live blur, continuously running animation, or extra network calls.
+- Lightweight remote-focus animation: Leanback's native card zoom plus a
+  170 ms opacity fade of a gradient glass outline. Only the focused item moves
+  its shader colours and precomputed noise at 20 fps; no live blur, extra
+  image allocations per frame, or network calls.
 - Native circular focus with a blue-white glass rim on title-bar controls,
   without Android's additional rectangular keyboard-focus highlight. The
   profile button no longer displays the redundant "None" tooltip.
@@ -69,6 +70,12 @@ Sony BRAVIA VH1 hardware. It is **not** an official YouTube or Sony application.
   layout, including on devices where a later layout callback does not run.
   The glass capsule is a non-interactive translucent overlay; its observer
   attaches after the view joins the window, with a selected-row fallback.
+- v12 compacts the top bar and sidebar clearance, paints the entire navigation
+  dock to remove the exposed black strip, and places the focus glass behind
+  the header icons and labels. Smaller 16:9 cards and tighter spacing display
+  more videos per row. Focused video cards, title-bar orbs, settings tiles,
+  and the navigation capsule gain animated gradient/noise glass outlines;
+  off-focus items do not perform animation work.
 - GitHub Actions builds both Android TV and tablet-preview variants on pushes
   to `pitube-v10`, and publishes direct APK downloads in a test prerelease.
 
@@ -112,7 +119,7 @@ equivalence with a physical Sony TV.
 The debug APK is signed using the developer's local debug keystore.
 The universal APK should appear under
 `smarttubetv/build/outputs/apk/stpitube/debug/`, named similarly to
-`PiTube_pitube_32.68-pitube.11_universal.apk`. Keep the debug keystore if you
+`PiTube_pitube_32.68-pitube.12_universal.apk`. Keep the debug keystore if you
 want to update the same installation later. For distribution, use a dedicated
 release signing key.
 
@@ -128,7 +135,7 @@ using OpenJDK 17, Gradle 7.5, and Android SDK 34. The universal APK was
 verified to declare `dev.pradi.pitube`, advertise an Android TV launcher,
 contain ARMv7 and ARM64 libraries, and pass APK signature checks for v1/v2.
 This verifies packaging, not live YouTube playback or appearance on a TV.
-The current version is `32.68-pitube.11` (`versionCode` 2468). Locally signed
+The current version is `32.68-pitube.12` (`versionCode` 2469). Locally signed
 APKs update previous PiTube installations only when the signing certificate
 matches. GitHub Actions uses its own debug key unless signing secrets are set.
 

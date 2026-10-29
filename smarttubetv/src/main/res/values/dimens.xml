@@ -3,11 +3,12 @@
     <!-- Default, same as xhdpi -->
     <!-- 320dpi, Amazon Fire TV Stick -->
 
-    <dimen name="card_width">216dp</dimen>
-    <dimen name="card_height">122dp</dimen>
+    <!-- Denser 16:9 shelves: three or more videos fit on a living-room TV. -->
+    <dimen name="card_width">184dp</dimen>
+    <dimen name="card_height">104dp</dimen>
     <!-- Home-only spotlight cards; no extra bitmap layers or video decoders. -->
-    <dimen name="pitube_featured_card_width">356dp</dimen>
-    <dimen name="pitube_featured_card_height">200dp</dimen>
+    <dimen name="pitube_featured_card_width">280dp</dimen>
+    <dimen name="pitube_featured_card_height">158dp</dimen>
     <!-- text_badge_image_view.xml, default: 12sp -->
     <dimen name="card_badge_text_size">14sp</dimen>
 
@@ -107,8 +108,8 @@
     -->
     <!--<dimen name="lb_browse_item_horizontal_spacing">15dp</dimen>-->
     <!--<dimen name="lb_browse_item_vertical_spacing">15dp</dimen>-->
-    <dimen name="grid_item_horizontal_spacing">24dp</dimen>
-    <dimen name="grid_item_vertical_spacing">25dp</dimen>
+    <dimen name="grid_item_horizontal_spacing">18dp</dimen>
+    <dimen name="grid_item_vertical_spacing">20dp</dimen>
     <dimen name="grid_horizontal_margin">25dp</dimen>
 
     <!-- Browse headers spacing. Origin: 21dp -->

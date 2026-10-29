@@ -18,5 +18,7 @@
                                                                        android:id="@+id/browse_title_group"
                                                                        android:layout_width="match_parent"
                                                                        android:layout_height="wrap_content"
+                                                                       android:paddingTop="14dp"
+                                                                       android:paddingBottom="14dp"
                                                                        style="?attr/browseTitleViewStyle" />
 

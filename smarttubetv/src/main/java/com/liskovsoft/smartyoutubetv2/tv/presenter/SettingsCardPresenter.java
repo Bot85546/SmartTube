@@ -15,6 +15,7 @@ import androidx.leanback.widget.Presenter;
 import com.liskovsoft.smartyoutubetv2.common.app.models.data.SettingsItem;
 import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData;
 import com.liskovsoft.smartyoutubetv2.tv.R;
+import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.headers.PiTubeGlassFocusDrawable;
 import com.liskovsoft.smartyoutubetv2.tv.util.ViewUtil;
 
 public class SettingsCardPresenter extends Presenter {
@@ -34,6 +35,12 @@ public class SettingsCardPresenter extends Presenter {
         @SuppressLint("InflateParams")
         View container = LayoutInflater.from(context).inflate(R.layout.settings_card, null);
         container.setBackgroundResource(R.drawable.pitube_settings_glass);
+        PiTubeGlassFocusDrawable focusOutline = new PiTubeGlassFocusDrawable(
+                context.getResources().getDisplayMetrics().density, true);
+        focusOutline.setAlpha(0);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            container.setForeground(focusOutline);
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             container.setDefaultFocusHighlightEnabled(false);
         }
@@ -45,6 +52,10 @@ public class SettingsCardPresenter extends Presenter {
         ViewUtil.setTextScrollSpeed(textView, getCardTextScrollSpeed(context));
 
         container.setOnFocusChangeListener((v, hasFocus) -> {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                focusOutline.setAlpha(hasFocus ? 255 : 0);
+                focusOutline.setActive(hasFocus);
+            }
             int textColor = hasFocus ? mSelectedTextColor : mDefaultTextColor;
             textView.setTextColor(textColor);
             // Transform-only focus transition: no live blur or new bitmap layer.
@@ -84,6 +95,12 @@ public class SettingsCardPresenter extends Presenter {
 
     @Override
     public void onUnbindViewHolder(ViewHolder viewHolder) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                && viewHolder.view.getForeground() instanceof PiTubeGlassFocusDrawable) {
+            PiTubeGlassFocusDrawable outline =
+                    (PiTubeGlassFocusDrawable) viewHolder.view.getForeground();
+            outline.setActive(false);
+        }
         viewHolder.view.animate().cancel();
         viewHolder.view.setScaleX(1f);
         viewHolder.view.setScaleY(1f);

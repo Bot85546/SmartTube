@@ -110,6 +110,14 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
 
         // Keep the sidebar background behind the movable focus capsule.
         PiTubeCrashReporter.note("BrowseFragment: onActivityCreated");
+        // The headers dock occupies the whole height of the browse screen.
+        // Painting it avoids the exposed black strip between the compact
+        // title bar and the first navigation item.
+        View root = getView();
+        View headersDock = root != null ? root.findViewById(R.id.browse_headers_dock) : null;
+        if (headersDock != null) {
+            headersDock.setBackgroundResource(R.drawable.pitube_sidebar_panel);
+        }
         if (!PiTubeCrashReporter.isSafeMode(getContext()) && getHeadersSupportFragment() != null
                 && getHeadersSupportFragment().getVerticalGridView() != null) {
             VerticalGridView grid = getHeadersSupportFragment().getVerticalGridView();
@@ -121,20 +129,10 @@ public class BrowseFragment extends BrowseSupportFragment implements BrowseView 
             grid.setBackgroundColor(Color.TRANSPARENT);
             View headersRoot = getHeadersSupportFragment().getView();
             if (headersRoot != null) {
-                headersRoot.setBackgroundResource(R.drawable.pitube_sidebar_panel);
+                headersRoot.setBackgroundColor(Color.TRANSPARENT);
             }
-            // Padding belongs to the scrollable content: Leanback's selection
-            // alignment can scroll it right behind the opaque title bar.
-            // Reserve actual layout space instead, so Home is visible and the
-            // labels remain stationary while the focus glass moves between them.
-            ViewGroup.LayoutParams layoutParams = grid.getLayoutParams();
-            if (layoutParams instanceof ViewGroup.MarginLayoutParams) {
-                ViewGroup.MarginLayoutParams margins =
-                        (ViewGroup.MarginLayoutParams) layoutParams;
-                margins.topMargin = Math.round(166 *
-                        getResources().getDisplayMetrics().density);
-                grid.setLayoutParams(margins);
-            }
+            // Header clearance is declared once in lb_headers_fragment.xml.
+            // Avoid repeated programmatic margin changes during re-attachment.
             grid.setPadding(grid.getPaddingLeft(), 0, grid.getPaddingRight(),
                     grid.getPaddingBottom());
             grid.setClipToPadding(false);

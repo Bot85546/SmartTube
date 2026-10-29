@@ -91,6 +91,6 @@ jobs:
             "${tv[0]}" "${tablet[0]}" PiTube-SHA256SUMS.txt \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
-            --title "PiTube v11 test build ${GITHUB_RUN_NUMBER}" \
+            --title "PiTube v12 test build ${GITHUB_RUN_NUMBER}" \
             --notes 'Experimental Android TV and Galaxy Tab S11 Ultra APKs. If this CI build uses a different test signing key from your installed PiTube, Android will require uninstalling the old test build first (which clears app data). Use the tablet flavor for the S11 Ultra and the TV flavor for BRAVIA.' \
             --prerelease

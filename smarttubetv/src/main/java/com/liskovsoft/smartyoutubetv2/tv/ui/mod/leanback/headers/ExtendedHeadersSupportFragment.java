@@ -35,6 +35,7 @@ public class ExtendedHeadersSupportFragment extends HeadersSupportFragment {
     private OnHeaderLongPressedListener mOnHeaderLongPressedListener;
     private ViewGroup mFocusCapsuleHost;
     private View mFocusCapsule;
+    private PiTubeGlassFocusDrawable mFocusGlass;
     private View mCurrentHeader;
     private VerticalGridView mHeadersGrid;
     private ViewTreeObserver.OnGlobalFocusChangeListener mHeaderFocusListener;
@@ -65,17 +66,18 @@ public class ExtendedHeadersSupportFragment extends HeadersSupportFragment {
         mFocusCapsuleHost.setClipChildren(false);
         mFocusCapsuleHost.setClipToPadding(false);
         mFocusCapsule = new View(view.getContext());
-        mFocusCapsule.setBackground(new PiTubeGlassFocusDrawable(
-                getResources().getDisplayMetrics().density));
+        mFocusGlass = new PiTubeGlassFocusDrawable(
+                getResources().getDisplayMetrics().density);
+        mFocusCapsule.setBackground(mFocusGlass);
         mFocusCapsule.setFocusable(false);
         mFocusCapsule.setClickable(false);
         mFocusCapsule.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         mFocusCapsule.setAlpha(0.84f);
         mFocusCapsule.setVisibility(View.INVISIBLE);
-        // Overlay the pill to avoid Leanback's opaque background concealing it.
-        // It remains non-interactive so remote focus stays with menu entries.
+        // Place the glass BELOW the transparent grid. Drawing it on top caused
+        // the pill's coloured fill to wash out menu icon and label contrast.
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(dp(190), dp(48));
-        mFocusCapsuleHost.addView(mFocusCapsule, params);
+        mFocusCapsuleHost.addView(mFocusCapsule, 0, params);
 
         mHeaderFocusListener = (oldFocus, newFocus) -> {
             if (newFocus != null && isInside(newFocus, mHeadersGrid)) {
@@ -183,10 +185,17 @@ public class ExtendedHeadersSupportFragment extends HeadersSupportFragment {
             mFocusCapsule.setY(y);
             mFocusCapsule.setVisibility(View.VISIBLE);
         }
+        if (mFocusGlass != null) {
+            mFocusGlass.setActive(true);
+        }
     }
 
     @Override
     public void onDestroyView() {
+        if (mFocusGlass != null) {
+            mFocusGlass.setActive(false);
+            mFocusGlass = null;
+        }
         if (mFocusObserver != null && mHeaderFocusListener != null
                 && mFocusObserver.isAlive()) {
             mFocusObserver.removeOnGlobalFocusChangeListener(mHeaderFocusListener);

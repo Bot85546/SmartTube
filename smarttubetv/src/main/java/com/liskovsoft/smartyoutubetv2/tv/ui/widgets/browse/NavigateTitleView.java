@@ -35,6 +35,7 @@ import com.liskovsoft.smartyoutubetv2.common.prefs.GeneralData;
 import com.liskovsoft.smartyoutubetv2.common.prefs.MainUIData;
 import com.liskovsoft.smartyoutubetv2.common.utils.Utils;
 import com.liskovsoft.smartyoutubetv2.tv.R;
+import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.headers.PiTubeGlassFocusDrawable;
 import com.liskovsoft.smartyoutubetv2.tv.ui.mod.leanback.playerglue.tooltips.TooltipCompatHandler;
 import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.search.LongClickSearchOrbView;
 import com.liskovsoft.smartyoutubetv2.tv.ui.widgets.time.DateTimeView;
@@ -218,9 +219,11 @@ public class NavigateTitleView extends TitleView implements OnDataChange, Accoun
             for (SearchOrbView orb : new SearchOrbView[] {
                     mSearchOrbView, mAccountView, mLanguageView, mExitPip}) {
                 orb.setDefaultFocusHighlightEnabled(false);
-                // A stateful, static oval highlight; the native Leanback orb
-                // still handles all focus zoom and color transitions.
-                orb.setForeground(ContextCompat.getDrawable(getContext(), R.drawable.pitube_orb_glass_focus));
+                // Animated circular glass outline; the native orb still
+                // handles scale and colour focus without custom listeners.
+                PiTubeGlassFocusDrawable outline = new PiTubeGlassFocusDrawable(
+                        getResources().getDisplayMetrics().density, true, true);
+                orb.setForeground(outline);
             }
         }
         mPipTitle = findViewById(R.id.pip_title);
